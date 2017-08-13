@@ -76,6 +76,74 @@ class GrammarTests: XCTestCase {
         XCTAssert(checkRemainingInput(rule: aGRUpperAlphaString, input: "23", expectedToRemain: "23"))
     }
     
+    func testGRStringNoQuote() {
+        var aGRStringNoQuote = GRStringNoQuote()
+        let hasAQuote = "\"hello hello"
+        XCTAssert(checkRecordedString(rule: aGRStringNoQuote, input: hasAQuote, expectedToRecord: ""))
+        XCTAssert(checkRemainingInput(rule: aGRStringNoQuote, input: hasAQuote, expectedToRemain: hasAQuote))
+       
+        aGRStringNoQuote = GRStringNoQuote()
+        let noQuote = "hello 25 hello"
+        XCTAssert(checkRecordedString(rule: aGRStringNoQuote, input: noQuote, expectedToRecord: noQuote))
+        XCTAssert(checkRemainingInput(rule: aGRStringNoQuote, input: noQuote, expectedToRemain: ""))
+    }
+    
+    func testGRColumnLabel() {
+        var aGRColumnLabel = GRColumnLabel()
+        let validLabel = "AB20"
+        XCTAssert(checkRecordedString(rule: aGRColumnLabel, input: validLabel, expectedToRecord: "AB"))
+        XCTAssert(checkRemainingInput(rule: aGRColumnLabel, input: validLabel, expectedToRemain: "20"))
+        
+        aGRColumnLabel = GRColumnLabel()
+        let invalidLabel = "zz20"
+        XCTAssert(checkRecordedString(rule: aGRColumnLabel, input: invalidLabel, expectedToRecord: ""))
+        XCTAssert(checkRemainingInput(rule: aGRColumnLabel, input: invalidLabel, expectedToRemain: invalidLabel))
+    }
+    
+    func testGRRowNumber() {
+        var aGRRowNumber = GRRowNumber()
+        let validRowNumber = "20000-"
+        XCTAssert(checkRecordedString(rule: aGRRowNumber, input: validRowNumber, expectedToRecord: "20000"))
+        XCTAssert(checkRemainingInput(rule: aGRRowNumber, input: validRowNumber, expectedToRemain: "-"))
+        
+        aGRRowNumber = GRRowNumber()
+        let invalidRowNumber1 = "-2000"
+        XCTAssert(checkRecordedString(rule: aGRRowNumber, input: invalidRowNumber1, expectedToRecord: ""))
+        XCTAssert(checkRemainingInput(rule: aGRRowNumber, input: invalidRowNumber1, expectedToRemain: invalidRowNumber1))
+        
+        aGRRowNumber = GRRowNumber()
+        let invalidRowNumber2 = "NaN"
+        XCTAssert(checkRecordedString(rule: aGRRowNumber, input: invalidRowNumber2, expectedToRecord: ""))
+        XCTAssert(checkRemainingInput(rule: aGRRowNumber, input: invalidRowNumber2, expectedToRemain: invalidRowNumber2))
+    }
+    
+    func testGRAbsoluteCell() {
+        var aGRAbsoluteCell = GRAbsoluteCell()
+        let validAbsCell = "ZAAZB123 := 12"
+        XCTAssert(checkRemainingInput(rule: aGRAbsoluteCell, input: validAbsCell, expectedToRemain: " := 12"))
+        XCTAssert(checkRecordedString(rule: aGRAbsoluteCell, input: validAbsCell, expectedToRecord: "ZAAZB123"))
+        
+        aGRAbsoluteCell = GRAbsoluteCell()
+        let invalidAbsCell = "ABa12"
+        XCTAssert(checkRemainingInput(rule: aGRAbsoluteCell, input: invalidAbsCell, expectedToRemain: invalidAbsCell))
+        XCTAssert(checkRecordedString(rule: aGRAbsoluteCell, input: invalidAbsCell, expectedToRecord: ""))
+    }
+    
+    func testProductTermTail() {
+        var aGRproductTermTail = GRProductTermTail()
+        let times = "*3"
+        
+        XCTAssert(checkRecordedString(rule: aGRproductTermTail, input: times, expectedToRecord: times))
+        XCTAssert(checkRemainingInput(rule: aGRproductTermTail, input: times, expectedToRemain: ""))
+        XCTAssertEqual(aGRproductTermTail.calculatedValue!, 3)
+        
+        aGRproductTermTail = GRProductTermTail()
+        let timesTwice = "*3*3*4"
+        
+        XCTAssert(checkRecordedString(rule: aGRproductTermTail, input: timesTwice, expectedToRecord: timesTwice))
+        XCTAssert(checkRemainingInput(rule: aGRproductTermTail, input: timesTwice, expectedToRemain: ""))
+        XCTAssertEqual(aGRproductTermTail.calculatedValue!, 36)
+    }
     
     
 
