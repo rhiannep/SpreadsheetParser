@@ -6,8 +6,9 @@
 
 import Foundation
 /**
- * A GRNonTerminal is a GrammarRule thats string value is composed of the string values
- * of the rules that were applied in a successful parse. The calculated value of a rule is
+ * A GRNonTerminal is a GrammarRule thats right hand side rues contain more grammar rules.
+ * The string value of a non-terminal rule is composed of the string values
+ * of the right hand side rules that were applied in a successful parse. The calculated value of a rule is
  * not calculated here because the calculated value is specific to each rule.
  */
 class GRNonTerminal : GrammarRule {
@@ -92,15 +93,25 @@ class GRProductTerm : GRNonTerminal {
 class GRProductTermTail : GRNonTerminal {
     let times = GRLiteral(literal: "*")
     let num = GRInteger()
-    var tail : GrammarRule = Epsilon.theEpsilon
     
     init() {
-        super.init(rhsRules: [[times, num], [Epsilon.theEpsilon]])
+        super.init(rhsRules: [[times, num]])
     }
     
+    // A hacky implementation of the recursive tail part. If the input was successfully parsed as -> "*" Integer
+    // A second GRProductTailTerm is instantiated, and then given the remaining input to try and parse itself.
+    // If succesful, the tails values are passed up to this instance and this instances state is adjusted accordingly.
+    // I would have like to make this more object oriented by using the Epsilon parse but can't work it out.
     override func parse(input: String) -> String? {
         if let rest = super.parse(input: input) {
-            self.calculatedValue =  Int(num.stringValue!)
+            self.calculatedValue = num.calculatedValue!
+            let tail = GRProductTermTail()
+            if let restOfRest = tail.parse(input: rest) {
+                self.calculatedValue! *= tail.calculatedValue!
+                self.stringValue! += tail.stringValue!
+                self.currentRuleSet?.append(tail)
+                return restOfRest
+            }
             return rest
         }
         return nil
