@@ -76,6 +76,6 @@ class CellReference : Hashable {
  * A struct to store the expression and value found in a cell of a Spreadsheet.
  */
 struct CellContents {
-    var experssion : String = ""
+    var expression : String = ""
     var value : Int = 0
 }

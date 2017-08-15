@@ -14,6 +14,8 @@ import Foundation
  The base GrammarRule class has a parse method that attempts in turn to parse each alternative GrammarRule list.
  */
 class GrammarRule {
+    static var cells = [CellReference: CellContents]()
+    
     /// A GrammarRule instance will have a stringValue when it parses something successfully
     var stringValue : String? = nil
     /// A GrammarRule instance may have a calculatedValue, although really this should be in a subclass and is a hack to facilitate a simple example.
@@ -56,9 +58,23 @@ class GrammarRule {
                 }
             }
             currentRuleSet = ruleChoice // record which rules were used when something is parsed successfully
+            if currentRuleSet?[0] === Epsilon.theEpsilon {
+                self.stringValue = nil
+                self.calculatedValue = nil
+            }
             return remainingInput
         }
+        // Make each grammar rule instance reuseable, no old state is stored after an unsuccessful parse
+        self.stringValue = nil
+        self.calculatedValue = nil
         return nil
+    }
+    
+    static func getCell(_ key: CellReference) -> CellContents {
+        if cells[key] == nil {
+            return CellContents()
+        }
+        return cells[key]!
     }
     
 }
@@ -71,7 +87,6 @@ class GrammarRule {
 class Epsilon : GrammarRule {
     /// An Epsilon parse consumes nothing from the input string, so returns all of the input as the remaining string to be parsed.
     override func parse(input : String) -> String? {
-        print("epsilon!!")
         return input
     }
 

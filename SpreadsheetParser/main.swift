@@ -8,9 +8,14 @@
 
 import Foundation
 
-var input : String = ""
-while (readLine() != nil) {
-    var input = readLine()
+var input = ""
+
+while let next = readLine() {
+    input += next
 }
 
-print(input)
+
+
+
+
+

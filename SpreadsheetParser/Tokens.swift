@@ -30,6 +30,9 @@ class Token : GrammarRule {
         
         // We require the regular expression to match right at the start of the whitespace-trimmed input string
         if(rangeOfFirstMatch.location != 0){
+            // Make this grammar rule re-useable
+            self.calculatedValue = nil
+            self.stringValue = nil
             return nil //no match
         }
         
@@ -95,5 +98,23 @@ class GRUpperAlphaString : Token {
 class GRStringNoQuote : Token {
     init() {
         super.init(regExpPattern: "[^\"]+")
+    }
+    override func parse(input: String) -> String? {
+        // Find the first match
+        let rangeOfFirstMatch = regExp.rangeOfFirstMatch(in: input, options: [], range: NSRange(location: 0, length: input.characters.count))
+        
+        // We require the regular expression to match right at the start of the whitespace-trimmed input string
+        if(rangeOfFirstMatch.location != 0){
+            return nil //no match
+        }
+        
+        // Determine where the match finishes and the start of the restOfInput begins
+        let index = input.index(input.startIndex, offsetBy: rangeOfFirstMatch.length)
+        let match = input.substring(to: index)
+        // The string value of this Token is the text that matched
+        self.stringValue = match
+        
+        let restOfInput = input.substring(from: index)
+        return restOfInput
     }
 }
