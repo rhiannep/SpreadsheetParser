@@ -5,6 +5,54 @@
 //
 
 import Foundation
+
+class GRPrint : GrammarRule {
+    let printValue = GRLiteral(literal: "print_value")
+    let printExpression = GRLiteral(literal: "print_expr")
+    let expression = GRExpression()
+    
+    init() {
+        super.init(rhsRules: [[printValue, expression], [printExpression, expression]])
+    }
+    
+    override func parse(input: String) -> String? {
+        if let rest = super.parse(input: input) {
+            if let cell = GrammarRule.cells.get(expression.stringValue!) {
+                if(currentRuleSet?[0] === printExpression) {
+                    print("Expression in cell \(expression.stringValue!) is \(cell.expression)")
+                } else {
+                    print("Value in cell \(expression.stringValue!) is \(cell.value)")
+                }
+            } else {
+                if(currentRuleSet?[0] === printExpression) {
+                    print("Expression is \(expression.stringValue!)")
+                } else {
+                    print("Value is \(expression.calculatedValue!)")
+                }
+            }
+            return rest
+        }
+        return nil
+    }
+}
+class GRAssignment : GrammarRule {
+    let cellRef = GRAbsoluteCell()
+    let equals = GRLiteral(literal: ":=")
+    let expression = GRExpression()
+    
+    init() {
+        super.init(rhsRule: [cellRef, equals, expression])
+    }
+    
+    override func parse(input: String) -> String? {
+        if let rest = super.parse(input: input) {
+            let contents = CellContents(expression: expression.stringValue!, value: expression.calculatedValue!)
+            GrammarRule.cells.add(cellRef.cellReference!, contents)
+            return rest
+        }
+        return nil
+    }
+}
 /**
  * A GRNonTerminal is a GrammarRule thats right hand side rues contain more grammar rules.
  * The string value of a non-terminal rule is composed of the string values
@@ -17,13 +65,11 @@ class GRNonTerminal : GrammarRule {
             if self.currentRuleSet != nil {
                 var buildString = ""
                 for rule in self.currentRuleSet! {
-                    if !(rule is Epsilon || rule.currentRuleSet?[0] is Epsilon) {
+                    if !(rule.rhsIsEpsilon() || rule is Epsilon) {
                         buildString += rule.stringValue!
                     }
                 }
-//                if !(self.currentRuleSet?[0] is Epsilon) { self.stringValue = buildString }
-                self.stringValue = buildString
-                if (self.currentRuleSet?[0] is Epsilon && self.currentRuleSet?.count == 1) { self.stringValue = nil }
+                if !self.rhsIsEpsilon() { self.stringValue = buildString }
             }
             return rest
         }
@@ -32,9 +78,10 @@ class GRNonTerminal : GrammarRule {
 }
 
 class GRSpreadsheet : GRNonTerminal {
-    let myGRExpression = GRExpression()
+    let aGRPrint = GRPrint()
+    let aGRAssignment = GRAssignment()
     init(){
-        super.init(rhsRules: [[myGRExpression], [Epsilon.theEpsilon]])
+        super.init(rhsRules: [[aGRAssignment], [aGRPrint], [Epsilon.theEpsilon]])
     }
 }
 
@@ -49,14 +96,18 @@ class GRExpression : GRNonTerminal {
     }
     override func parse(input: String) -> String? {
         if let rest = super.parse(input:input) {
-            if(self.currentRuleSet!.contains(where: { $0 === quotedString })) { return rest }
-            if exprTail.currentRuleSet!.contains(where: { $0 === Epsilon.theEpsilon }) {
+            if(self.currentRuleSet!.contains(where: { $0 === quotedString })) {
+                 self.calculatedValue = 0
+                 return rest
+            }
+            if exprTail.rhsIsEpsilon() {
                 self.calculatedValue = num.calculatedValue!
             } else {
                 self.calculatedValue = num.calculatedValue! + exprTail.calculatedValue!
             }
             return rest
         }
+        self.nilify()
         return nil
     }
 }
@@ -76,12 +127,12 @@ class GRExpressionTail : GRNonTerminal {
     // I would have like to make this more object oriented by using the Epsilon parse differently but can't work it out.
     override func parse(input: String) -> String? {
         if let rest = super.parse(input: input) {
-            if rest == input { return input } // This must be an Epsilon parse so no need to record state or do a second parse.
+            if self.rhsIsEpsilon() { return input } // This must be an Epsilon parse so no need to record state or do a second parse.
             self.calculatedValue = num.calculatedValue!
             let tail = GRExpressionTail()
             if let restOfRest = tail.parse(input: rest) {
                 self.currentRuleSet?.append(tail)
-                if restOfRest == rest { return rest } // Tail must be Epsilon, so return without updating state
+                if tail.rhsIsEpsilon() { return rest } // Tail must be Epsilon, so return without updating state
                 self.calculatedValue! += tail.calculatedValue!
                 self.stringValue! += tail.stringValue!
                 return restOfRest
@@ -94,15 +145,15 @@ class GRExpressionTail : GRNonTerminal {
 
 /// A Grammar Rule for handling ProductTerm -> Integer ProductTermTail
 class GRProductTerm : GRNonTerminal {
-    let num = GRInteger()
+    let num = GRValue()
     let productTail = GRProductTermTail()
     
     init(){
-        super.init(rhsRule: [num,productTail])
+        super.init(rhsRule: [num, productTail])
     }
     override func parse(input: String) -> String? {
         if let rest = super.parse(input:input) {
-            if productTail.currentRuleSet!.contains(where: { $0 === Epsilon.theEpsilon }) {
+            if productTail.rhsIsEpsilon(){
               self.calculatedValue = num.calculatedValue!
             } else {
               self.calculatedValue = num.calculatedValue! * productTail.calculatedValue!
@@ -129,14 +180,15 @@ class GRProductTermTail : GRNonTerminal {
     // I would have like to make this more object oriented by using the Epsilon parse but can't work it out.
     override func parse(input: String) -> String? {
         if let rest = super.parse(input: input) {
-            if rest == input {
+            if self.rhsIsEpsilon() {
                 // The RHS rule is epsilon, return without updating state
                 return input
             }
             self.calculatedValue = num.calculatedValue!
             let tail = GRProductTermTail()
             if let restOfRest = tail.parse(input: rest) {
-                if restOfRest == rest {
+                self.currentRuleSet?.append(tail)
+                if tail.rhsIsEpsilon() {
                     // Tail is really just epsilon, return without updating state
                     return rest
                 }
@@ -261,7 +313,7 @@ class GRValue : GRNonTerminal {
     override func parse(input: String) -> String? {
         if let rest = super.parse(input: input) {
             if(currentRuleSet?[0] === reference) {
-                self.calculatedValue = GrammarRule.getCell(reference.cellReference!).value
+                self.calculatedValue = GrammarRule.cells.get(reference.cellReference!).value
             } else if currentRuleSet?[0] === number {
                 self.calculatedValue = number.calculatedValue!
             }

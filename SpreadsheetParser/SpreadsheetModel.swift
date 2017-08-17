@@ -9,6 +9,37 @@
 import Foundation
 
 /**
+ * A wrapper class for a dictionary of cell contents
+ */
+class Cells {
+    private var cells = [CellReference: CellContents]()
+    
+    func add(_ ref : CellReference, _ contents: CellContents) {
+        cells[ref] = contents
+    }
+    
+    func get(_ key : String) -> CellContents? {
+        let reference = GRCellReference()
+        
+        if(reference.parse(input: key) == "") {
+            return get(reference.cellReference!)
+        }
+        return nil
+    }
+    
+    func get(_ key: CellReference) -> CellContents {
+        if cells[key] == nil {
+            return CellContents()
+        }
+        return cells[key]!
+    }
+    
+    func clear() {
+        cells.removeAll()
+    }
+}
+
+/**
  * A cell reference class to be used as keys in a set of Cells
  * Provides functionality for converting between absolute and relative
  * references in the two initialisers. I have indexed absolute cells from
@@ -43,7 +74,7 @@ class CellReference : Hashable {
             places -= 1
         }
         
-        relative = "r" + String(rowNumber) + "c" + String(columnNumber - 1)
+        relative = "r" + String(rowNumber - 1) + "c" + String(columnNumber - 1)
     }
     
     // Constructor takes arguments that directly translate to a relative cell reference
@@ -64,7 +95,7 @@ class CellReference : Hashable {
             columnLabel += String(UnicodeScalar(digit + unicodeUpperA - 1)!)
             count += 1
         }
-        absolute = String(columnLabel.characters.reversed()) + String(row)
+        absolute = String(columnLabel.characters.reversed()) + String(row + 1)
     }
     
     static func == (lhs: CellReference, rhs: CellReference) -> Bool {
