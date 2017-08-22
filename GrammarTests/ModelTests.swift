@@ -23,57 +23,66 @@ class ModelTests: XCTestCase {
         super.tearDown()
     }
 
-    func testColumnNumberToLetter() {
-        let cell = CellReference(row: 3, column: 26)
-        XCTAssertEqual(cell.absolute, "AA4")
-        XCTAssertEqual(cell.relative, "r3c26")
+    func testRelativeCell() {
+        let cell1 = CellReference(colLabel: "AA", rowLabel: 3)
+        let cell = CellReference(context: cell1, rowOffset: 20, colOffset: -1)
+        XCTAssertEqual(cell.absolute, "Z23")
+        XCTAssertEqual(cell.row, 22)
+        XCTAssertEqual(cell.column, 25)
     }
     
     func testColumnLetterToNumber() {
-        let cell = CellReference(columnRef: "AA", rowNumber: 3)
+        let cell = CellReference(colLabel: "AA", rowLabel: 3)
         XCTAssertEqual(cell.absolute, "AA3")
-        XCTAssertEqual(cell.relative, "r2c26")
+        XCTAssertEqual(cell.row, 2)
+        XCTAssertEqual(cell.column, 26)
     }
     
     func testHashability() {
-        let cell1 = CellReference(columnRef: "AA", rowNumber: 3)
-        let cell2 = CellReference(row: 2, column: 26)
-        let cell3 = CellReference(row: 3, column: 25)
-        XCTAssertEqual(cell1.hashValue, cell2.hashValue)
+        let cell1 = CellReference(colLabel: "AA", rowLabel: 3)
+        let cell2 = CellReference(context: cell1, rowOffset: 0, colOffset: 0)
+        let cell3 = CellReference(context: cell1, rowOffset: -1, colOffset: 0)
         XCTAssertEqual(cell1, cell2)
         XCTAssertNotEqual(cell2, cell3)
     }
     
     func testCellContents() {
-        let cell = CellContents(expression: "1+2", value: 3)
+        let cellValue = CellValue()
+        cellValue.set(number: 3)
+        
+        let cell = CellContents(expression: "1+2", value: cellValue)
         
         XCTAssertEqual(cell.expression, "1+2")
-        XCTAssertEqual(cell.value, 3)
+        XCTAssertEqual(cell.value.get(), 3)
     }
     
     func testSimpleDictionary() {
         // A dictionary of CellContents indexed by CellReferences
         var cells = [CellReference: CellContents]()
+        let cellValue = CellValue()
+        cellValue.set(number: 3)
         
-        // Add a value and expression to cell to r3c26 and the same value is in AA4
-        cells[CellReference(row: 3, column: 26)] = CellContents(expression: "1*2", value: 3)
-        let reference1 = CellReference(columnRef: "AA", rowNumber: 4)
-        XCTAssertEqual(cells[reference1]!.value, 3)
+        // Add a value and expression to cell to AA4
+        let reference1 = CellReference(colLabel: "AA", rowLabel: 4)
+        cells[CellReference(colLabel: "AA", rowLabel: 4)] = CellContents(expression: "1*2", value: cellValue)
+        XCTAssertEqual(cells[reference1]!.value.get(), 3)
         
-        // Change the contents of AA4/r3c26 and check that the contents have changed
-        cells[reference1] = CellContents(expression: "whatever", value: 12)
-        XCTAssertEqual(cells[CellReference(row: 3, column: 26)]!.value, 12)
-        XCTAssertEqual(cells[CellReference(columnRef: "AA", rowNumber: 4)]!.expression, "whatever")
+        cellValue.set(number: 12)
+        // Change the contents of AA4 and check that the contents have changed
+        cells[reference1] = CellContents(expression: "whatever", value: cellValue)
+        XCTAssertEqual(cells[reference1]!.value.get(), 12)
+        XCTAssertEqual(cells[CellReference(colLabel: "AA", rowLabel: 4)]!.expression, "whatever")
         
-        // There should only be one cell so far because AA4 and r3c26 refer to the same cell
+        // There should only be one cell so far
         XCTAssertEqual(cells.count, 1)
         
+        cellValue.set(number: 3)
         // Add another cell at Z3 and copy the contents of AA3
-        cells[CellReference(row: 2, column: 25)] = cells[reference1]
+        cells[CellReference(colLabel: "Z", rowLabel: 3)] = cells[reference1]
         // Change the contents of AA3
-        cells[reference1] = CellContents(expression: "whatever else", value: 22)
+        cells[reference1] = CellContents(expression: "whatever else", value: cellValue)
         // Check Z3 still has the old contents of AA3
-        XCTAssertEqual(cells[CellReference(columnRef: "Z", rowNumber: 3)]!.expression, "whatever")
+        XCTAssertEqual(cells[CellReference(colLabel: "Z", rowLabel: 3)]!.expression, "whatever")
         // Should only be 2 cells now
         XCTAssertEqual(cells.count, 2)
     }
