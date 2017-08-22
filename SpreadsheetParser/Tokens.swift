@@ -56,7 +56,7 @@ class GRInteger : Token {
         let returnValue = super.parse(input: input)
         if let strVal = self.stringValue {
             // if a stringValue has been parsed, we should be able to record the integer value too
-            self.calculatedValue = Int(strVal)
+            self.calculatedValue.set(number: Int(strVal)!)
         }
         return returnValue
     }
@@ -71,7 +71,7 @@ class GRPositiveInteger : Token {
         let returnValue = super.parse(input: input)
         if let strVal = self.stringValue {
             // if a stringValue has been parsed, we should be able to record the integer value too
-            self.calculatedValue = Int(strVal)
+            self.calculatedValue.set(number: Int(strVal)!)
         }
         return returnValue
     }

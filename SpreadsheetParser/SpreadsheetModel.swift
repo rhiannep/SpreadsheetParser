@@ -9,16 +9,17 @@
 import Foundation
 
 /**
- * A wrapper class for a dictionary of cell contents
+ * A struct for a dictionary of cell contents
  */
-class Cells {
-    private var cells = [CellReference: CellContents]()
+struct Cells {
+    static var currentContext : CellReference? = nil
+    static private var cells = [CellReference: CellContents]()
     
-    func add(_ ref : CellReference, _ contents: CellContents) {
+    static func add(_ ref : CellReference, _ contents: CellContents) {
         cells[ref] = contents
     }
     
-    func get(_ key : String) -> CellContents? {
+    static func get(_ key : String) -> CellContents? {
         let reference = GRCellReference()
         
         if(reference.parse(input: key) == "") {
@@ -27,14 +28,33 @@ class Cells {
         return nil
     }
     
-    func get(_ key: CellReference) -> CellContents {
+    
+    static func getRefreshed(_ key : String) -> CellContents? {
+        let reference = GRCellReference()
+        
+        if(reference.parse(input: key) == "") {
+            let newExpression = GRExpression()
+            if let cell = cells[reference.cellReference!] {
+                currentContext = reference.cellReference!
+                if newExpression.parse(input: cell.expression) != nil {
+                    cells[reference.cellReference!] = CellContents(expression: newExpression.stringValue!, value: newExpression.calculatedValue)
+                    currentContext = nil
+                    return cells[reference.cellReference!]
+                }
+            }
+        }
+        return nil
+    }
+    
+    static func get(_ key: CellReference) -> CellContents {
         if cells[key] == nil {
             return CellContents()
         }
         return cells[key]!
     }
     
-    func clear() {
+    
+    static func clear() {
         cells.removeAll()
     }
 }
@@ -51,36 +71,40 @@ class Cells {
  */
 class CellReference : Hashable {
     let absolute : String
-    let relative : String
+    
+    let row : Int
+    let column : Int
+    
     var hashValue: Int {
-        return relative.hashValue
+        return absolute.hashValue
     }
     
     // Constructor takes arguments that directly translate to an absolute cell reference
-    // and compute the corresponding relative cell reference.
+    // and compute the row and column indexes
     //
-    init(columnRef : String, rowNumber : Int) {
-        absolute = columnRef + String(rowNumber)
+    init(colLabel : String, rowLabel : Int) {
+        absolute = colLabel + String(rowLabel)
         
         let unicodeUpperA = Int(UnicodeScalar("A").value)
         let alphabetCount = 26
-        var places = columnRef.characters.count - 1
+        var places = colLabel.characters.count - 1
         var columnNumber = 0
         
         // For each letter in the column string add it's contribution to 
         // the final column number.
-        for letter in columnRef.unicodeScalars {
+        for letter in colLabel.unicodeScalars {
             columnNumber += (Int(letter.value) - unicodeUpperA + 1) * Int(pow(Double(alphabetCount), Double(places)))
             places -= 1
         }
         
-        relative = "r" + String(rowNumber - 1) + "c" + String(columnNumber - 1)
+        row = rowLabel - 1
+        column = columnNumber - 1
     }
     
-    // Constructor takes arguments that directly translate to a relative cell reference
-    // and compute the corresponding absolute cell reference.
-    init(row: Int, column: Int) {
-        relative = "r" + String(row) + "c" + String(column)
+    // Constructor takes an existing cell reference and computes
+    init(context: CellReference, rowOffset: Int, colOffset: Int) {
+        row = context.row + rowOffset
+        column = context.column + colOffset
         
         var columnNumber = column
         let unicodeUpperA = Int(UnicodeScalar("A").value)
@@ -99,7 +123,7 @@ class CellReference : Hashable {
     }
     
     static func == (lhs: CellReference, rhs: CellReference) -> Bool {
-        return lhs.absolute == rhs.absolute || lhs.relative == rhs.relative
+        return lhs.absolute == rhs.absolute
     }
 }
 
@@ -108,5 +132,5 @@ class CellReference : Hashable {
  */
 struct CellContents {
     var expression : String = ""
-    var value : Int = 0
+    var value = CellValue(0)
 }

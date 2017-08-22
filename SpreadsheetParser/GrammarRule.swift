@@ -14,11 +14,11 @@ import Foundation
  The base GrammarRule class has a parse method that attempts in turn to parse each alternative GrammarRule list.
  */
 class GrammarRule {
-    static var cells = Cells()
-        /// A GrammarRule instance will have a stringValue when it parses something successfully
+    
+    /// A GrammarRule instance will have a stringValue when it parses something successfully
     var stringValue : String? = nil
     /// A GrammarRule instance may have a calculatedValue, although really this should be in a subclass and is a hack to facilitate a simple example.
-    var calculatedValue : Int? = nil
+    var calculatedValue = CellValue()
     
     /// Keep track of the rule set that has been successfully used in a parse
     var currentRuleSet : [GrammarRule]? = nil
@@ -50,17 +50,13 @@ class GrammarRule {
             for rule in ruleChoice {
                 if let rest = rule.parse(input: remainingInput) {
                     remainingInput = rest
-                    // Add the successful rule parse to the current set of rhs rules
                 } else {
                     // Failing to parse any GrammarRule within a RHS choice means we failed to parse that RHS choice and should try the next choice (if there is one).
                     continue ruleLoop
                 }
             }
             currentRuleSet = ruleChoice // record which rules were used when something is parsed successfully
-            if currentRuleSet?[0] === Epsilon.theEpsilon {
-                self.stringValue = nil
-                self.calculatedValue = nil
-            }
+            if rhsIsEpsilon() { nilify() }
             return remainingInput
         }
         // Make each grammar rule instance reuseable, no old state is stored after an unsuccessful parse
@@ -70,7 +66,7 @@ class GrammarRule {
     
     func nilify() {
         self.stringValue = nil
-        self.calculatedValue = nil
+        self.calculatedValue = CellValue()
     }
     
     func rhsIsEpsilon() -> Bool {
@@ -80,6 +76,84 @@ class GrammarRule {
         return currentRuleSet![0] is Epsilon && currentRuleSet!.count == 1
     }
     
+}
+
+class CellValue {
+    private var string : String?
+    private var calculatedValue : Int?
+    
+    init() {
+        string = nil
+        calculatedValue = nil
+    }
+    
+    convenience init(_ number: Int) {
+        self.init()
+        calculatedValue = number
+    }
+    
+    func set(number: Int){
+        self.calculatedValue = number
+    }
+    
+    func set(string: String) {
+        self.string = string;
+    }
+    
+    func get() -> Int? {
+        return self.calculatedValue
+    }
+    
+    
+    func describing() -> String {
+        if self.string != nil {
+            return string!
+        }
+        if self.calculatedValue != nil {
+            return String(describing: self.calculatedValue!)
+        }
+        return ""
+    }
+    
+    func copy() -> CellValue {
+        let copy = CellValue()
+        if self.string != nil {
+            copy.set(string: self.string!)
+        }
+        
+        if self.calculatedValue != nil {
+            copy.set(number: self.calculatedValue!)
+        }
+        return copy
+    }
+    
+    static func +=(cellValue1: CellValue, cellValue2: CellValue) {
+        if cellValue1.get() != nil && cellValue2.get() != nil {
+            cellValue1.set(number: cellValue1.get()! + cellValue2.get()!)
+        }
+    }
+    
+    static func *=(cellValue1: CellValue, cellValue2: CellValue) {
+        if cellValue1.get() != nil && cellValue2.get() != nil {
+            cellValue1.set(number: cellValue1.get()! * cellValue2.get()!)
+        }
+    }
+    
+    static func +(cellValue1: CellValue, cellValue2: CellValue) -> CellValue {
+        let newCellValue = CellValue()
+        if cellValue1.get() != nil && cellValue2.get() != nil {
+            newCellValue.set(number: cellValue1.get()! + cellValue2.get()!)
+        }
+        return newCellValue
+    }
+    
+    static func *(cellValue1: CellValue, cellValue2: CellValue) -> CellValue {
+        let newCellValue = CellValue()
+        if cellValue1.get() != nil && cellValue2.get() != nil {
+            newCellValue.set(number: cellValue1.get()! * cellValue2.get()!)
+        }
+        return newCellValue
+    }
 }
 
 /**
