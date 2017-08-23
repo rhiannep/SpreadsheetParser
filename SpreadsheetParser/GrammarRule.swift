@@ -64,11 +64,17 @@ class GrammarRule {
         return nil
     }
     
+    /**
+     Helper function to wipe the state of this grammar rule
+     */
     func nilify() {
         self.stringValue = nil
         self.calculatedValue = CellValue()
     }
     
+    /**
+     Checks if the most recent parse was an epsilon parse
+     */
     func rhsIsEpsilon() -> Bool {
         if currentRuleSet == nil {
             return false
@@ -78,83 +84,6 @@ class GrammarRule {
     
 }
 
-class CellValue {
-    private var string : String?
-    private var calculatedValue : Int?
-    
-    init() {
-        string = nil
-        calculatedValue = nil
-    }
-    
-    convenience init(_ number: Int) {
-        self.init()
-        calculatedValue = number
-    }
-    
-    func set(number: Int){
-        self.calculatedValue = number
-    }
-    
-    func set(string: String) {
-        self.string = string;
-    }
-    
-    func get() -> Int? {
-        return self.calculatedValue
-    }
-    
-    
-    func describing() -> String {
-        if self.string != nil {
-            return string!
-        }
-        if self.calculatedValue != nil {
-            return String(describing: self.calculatedValue!)
-        }
-        return ""
-    }
-    
-    func copy() -> CellValue {
-        let copy = CellValue()
-        if self.string != nil {
-            copy.set(string: self.string!)
-        }
-        
-        if self.calculatedValue != nil {
-            copy.set(number: self.calculatedValue!)
-        }
-        return copy
-    }
-    
-    static func +=(cellValue1: CellValue, cellValue2: CellValue) {
-        if cellValue1.get() != nil && cellValue2.get() != nil {
-            cellValue1.set(number: cellValue1.get()! + cellValue2.get()!)
-        }
-    }
-    
-    static func *=(cellValue1: CellValue, cellValue2: CellValue) {
-        if cellValue1.get() != nil && cellValue2.get() != nil {
-            cellValue1.set(number: cellValue1.get()! * cellValue2.get()!)
-        }
-    }
-    
-    static func +(cellValue1: CellValue, cellValue2: CellValue) -> CellValue {
-        let newCellValue = CellValue()
-        if cellValue1.get() != nil && cellValue2.get() != nil {
-            newCellValue.set(number: cellValue1.get()! + cellValue2.get()!)
-        }
-        return newCellValue
-    }
-    
-    static func *(cellValue1: CellValue, cellValue2: CellValue) -> CellValue {
-        let newCellValue = CellValue()
-        if cellValue1.get() != nil && cellValue2.get() != nil {
-            newCellValue.set(number: cellValue1.get()! * cellValue2.get()!)
-        }
-        return newCellValue
-    }
-}
 
 /**
  There should only be a single Epsilon GrammarRule.
