@@ -182,10 +182,10 @@ class GrammarTests: XCTestCase {
         
         // Parsing "*3*3*4*2+7" should consume and record the "*3*3*4*2", and leave "+7"
         // Calculated value should be 3*3*4*2 = 72
-        let timesTwice = "*3*3*4*2+7"
+        let timesTwice = "*-3*3*4*2+7"
         XCTAssertEqual(aGRproductTermTail.parse(input: timesTwice), "+7")
-        XCTAssertEqual(aGRproductTermTail.calculatedValue.get(), 72)
-        XCTAssertEqual(aGRproductTermTail.stringValue, "*3*3*4*2")
+        XCTAssertEqual(aGRproductTermTail.calculatedValue.get(), -72)
+        XCTAssertEqual(aGRproductTermTail.stringValue, "*-3*3*4*2")
         
         // Parsing "+7" should consume nothing, and leave nothing
         let plus7 = "+7"

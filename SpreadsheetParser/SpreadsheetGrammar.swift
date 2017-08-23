@@ -50,8 +50,8 @@ class GRPrint : GRNonTerminal {
     override func parse(input: String) -> String? {
         if let rest = super.parse(input: input) {
             Cells.currentContext = nil
-            if var cell = Cells.get(expression.stringValue!) {
-                cell = Cells.getRefreshed(expression.stringValue!)!
+            if let cell = Cells.get(expression.stringValue!) {
+//                cell = Cells.getRefreshed(expression.stringValue!)!
                 if(currentRuleSet?[0] === printExpression) {
                     print("Expression in cell \(expression.stringValue!) is \(cell.expression)")
                 } else {
@@ -251,6 +251,7 @@ class GRRowNumber : GRNonTerminal {
     
 }
 
+/// A subclass of GRNonTerminal to make sure all state gets wiped for Grammar rules that have a cell reference.
 class GRCell : GRNonTerminal {
     var cellReference: CellReference?
     
@@ -338,6 +339,9 @@ class GRValue : GRNonTerminal {
         if let rest = super.parse(input: input) {
             if(currentRuleSet?[0] === reference) {
                 self.calculatedValue = Cells.get(reference.cellReference!).value.copy()
+                if Cells.currentContext != nil {
+                    Cells.addDependency(cell: Cells.currentContext!, dependentOn: reference.cellReference!)
+                }
             } else if currentRuleSet?[0] === number {
                 self.calculatedValue = number.calculatedValue.copy()
             }

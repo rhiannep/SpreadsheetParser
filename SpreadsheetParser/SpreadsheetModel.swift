@@ -14,9 +14,22 @@ import Foundation
 struct Cells {
     static var currentContext : CellReference? = nil
     static private var cells = [CellReference: CellContents]()
+    static private var dependencies = [CellReference: [CellReference]]()
     
     static func add(_ ref : CellReference, _ contents: CellContents) {
         cells[ref] = contents
+        if dependencies[ref] != nil {
+            for cell in dependencies[ref]! {
+                refresh(cell)
+            }
+        }
+    }
+    
+    static func addDependency(cell: CellReference, dependentOn: CellReference) {
+        if dependencies[cell] == nil {
+            dependencies[cell] = [CellReference]()
+        }
+        dependencies[cell]?.append(dependentOn)
     }
     
     static func get(_ key : String) -> CellContents? {
@@ -26,6 +39,15 @@ struct Cells {
             return get(reference.cellReference!)
         }
         return nil
+    }
+    
+    static func refresh(_ cell: CellReference) {
+        let newExpression = GRExpression()
+        currentContext = cell
+        if newExpression.parse(input: (cells[cell]?.expression)!) != nil {
+            cells[cell] = CellContents(expression: newExpression.stringValue!, value: newExpression.calculatedValue)
+//            currentContext = nil
+        }
     }
     
     
@@ -124,6 +146,83 @@ class CellReference : Hashable {
     
     static func == (lhs: CellReference, rhs: CellReference) -> Bool {
         return lhs.absolute == rhs.absolute
+    }
+}
+
+class CellValue {
+    private var string : String?
+    private var calculatedValue : Int?
+    
+    init() {
+        string = nil
+        calculatedValue = nil
+    }
+    
+    convenience init(_ number: Int) {
+        self.init()
+        calculatedValue = number
+    }
+    
+    func set(number: Int){
+        self.calculatedValue = number
+    }
+    
+    func set(string: String) {
+        self.string = string;
+    }
+    
+    func get() -> Int? {
+        return self.calculatedValue
+    }
+    
+    func describing() -> String {
+        if self.string != nil {
+            return string!
+        }
+        if self.calculatedValue != nil {
+            return String(describing: self.calculatedValue!)
+        }
+        return ""
+    }
+    
+    func copy() -> CellValue {
+        let copy = CellValue()
+        if self.string != nil {
+            copy.set(string: self.string!)
+        }
+        
+        if self.calculatedValue != nil {
+            copy.set(number: self.calculatedValue!)
+        }
+        return copy
+    }
+    
+    static func +=(cellValue1: CellValue, cellValue2: CellValue) {
+        if cellValue1.get() != nil && cellValue2.get() != nil {
+            cellValue1.set(number: cellValue1.get()! + cellValue2.get()!)
+        }
+    }
+    
+    static func *=(cellValue1: CellValue, cellValue2: CellValue) {
+        if cellValue1.get() != nil && cellValue2.get() != nil {
+            cellValue1.set(number: cellValue1.get()! * cellValue2.get()!)
+        }
+    }
+    
+    static func +(cellValue1: CellValue, cellValue2: CellValue) -> CellValue {
+        let newCellValue = CellValue()
+        if cellValue1.get() != nil && cellValue2.get() != nil {
+            newCellValue.set(number: cellValue1.get()! + cellValue2.get()!)
+        }
+        return newCellValue
+    }
+    
+    static func *(cellValue1: CellValue, cellValue2: CellValue) -> CellValue {
+        let newCellValue = CellValue()
+        if cellValue1.get() != nil && cellValue2.get() != nil {
+            newCellValue.set(number: cellValue1.get()! * cellValue2.get()!)
+        }
+        return newCellValue
     }
 }
 
