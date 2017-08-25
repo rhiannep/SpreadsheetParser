@@ -18,52 +18,14 @@ struct Cells {
     
     static func add(_ ref : CellReference, _ contents: CellContents) {
         cells[ref] = contents
-        if dependencies[ref] != nil {
-            for cell in dependencies[ref]! {
-                refresh(cell)
-            }
-        }
     }
-    
-    static func addDependency(cell: CellReference, dependentOn: CellReference) {
-        if dependencies[cell] == nil {
-            dependencies[cell] = [CellReference]()
-        }
-        dependencies[cell]?.append(dependentOn)
-    }
+
     
     static func get(_ key : String) -> CellContents? {
         let reference = GRCellReference()
         
         if(reference.parse(input: key) == "") {
             return get(reference.cellReference!)
-        }
-        return nil
-    }
-    
-    static func refresh(_ cell: CellReference) {
-        let newExpression = GRExpression()
-        currentContext = cell
-        if newExpression.parse(input: (cells[cell]?.expression)!) != nil {
-            cells[cell] = CellContents(expression: newExpression.stringValue!, value: newExpression.calculatedValue)
-//            currentContext = nil
-        }
-    }
-    
-    
-    static func getRefreshed(_ key : String) -> CellContents? {
-        let reference = GRCellReference()
-        
-        if(reference.parse(input: key) == "") {
-            let newExpression = GRExpression()
-            if let cell = cells[reference.cellReference!] {
-                currentContext = reference.cellReference!
-                if newExpression.parse(input: cell.expression) != nil {
-                    cells[reference.cellReference!] = CellContents(expression: newExpression.stringValue!, value: newExpression.calculatedValue)
-                    currentContext = nil
-                    return cells[reference.cellReference!]
-                }
-            }
         }
         return nil
     }
@@ -75,6 +37,34 @@ struct Cells {
         return cells[key]!
     }
     
+    static func refresh(_ cell: CellReference) {
+        let newExpression = GRExpression()
+        currentContext = cell
+        if newExpression.parse(input: (cells[cell]?.expression)!) != nil {
+            cells[cell] = CellContents(expression: newExpression.stringValue!, value: newExpression.calculatedValue)
+            currentContext = nil
+        }
+    }
+    
+    static func getRefreshed(_ key : String) -> CellContents? {
+        let reference = GRCellReference()
+        if(reference.parse(input: key) == "") {
+            return getRefreshed(reference.cellReference!)
+        }
+        return nil
+    }
+    
+    static func getRefreshed(_ ref : CellReference) -> CellContents {
+        let newExpression = GRExpression()
+        newExpression.set(context: ref)
+        if let cell = cells[ref] {
+            if newExpression.parse(input: cell.expression) != nil {
+                cells[ref] = CellContents(expression: newExpression.stringValue!, value: newExpression.calculatedValue)
+                return cells[ref]!
+            }
+        }
+        return CellContents()
+    }
     
     static func clear() {
         cells.removeAll()
@@ -124,10 +114,13 @@ class CellReference : Hashable {
     }
     
     // Constructor takes an existing cell reference and computes
-    init(context: CellReference, rowOffset: Int, colOffset: Int) {
+    init?(context: CellReference, rowOffset: Int, colOffset: Int) {
+        if context.row + rowOffset < 0 || context.column + colOffset < 0 {
+            return nil
+        }
+        
         row = context.row + rowOffset
         column = context.column + colOffset
-        
         var columnNumber = column
         let unicodeUpperA = Int(UnicodeScalar("A").value)
         let alphabetCount = 26

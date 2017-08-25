@@ -38,6 +38,26 @@ class GRNonTerminal : GrammarRule {
     }
 }
 
+class GRContextual : GRNonTerminal {
+    var context : CellReference?
+    
+    func set(context: CellReference?) {
+        self.context = context
+        for ruleChoice in self.rhs {
+            for rule in ruleChoice {
+                if let contextRule = rule as? GRContextual {
+                    contextRule.set(context: context)
+                }
+            }
+        }
+    }
+    
+    override func nilify() {
+        super.nilify()
+        self.context = nil
+    }
+}
+
 class GRPrint : GRNonTerminal {
     let printValue = GRLiteral(literal: "print_value")
     let printExpression = GRLiteral(literal: "print_expr")
@@ -49,8 +69,8 @@ class GRPrint : GRNonTerminal {
     
     override func parse(input: String) -> String? {
         if let rest = super.parse(input: input) {
-            Cells.currentContext = nil
-            if let cell = Cells.get(expression.stringValue!) {
+//            Cells.currentContext = nil
+            if let cell = Cells.getRefreshed(expression.stringValue!) {
 //                cell = Cells.getRefreshed(expression.stringValue!)!
                 if(currentRuleSet?[0] === printExpression) {
                     print("Expression in cell \(expression.stringValue!) is \(cell.expression)")
@@ -91,10 +111,12 @@ class GRAssignment : GRNonTerminal {
     override func parse(input: String) -> String? {
         // Set the current context
         if cellRef.parse(input: input) != nil {
-             Cells.currentContext = cellRef.cellReference!
+//             Cells.currentContext = cellRef.cellReference!
+            expression.set(context: cellRef.cellReference)
         } else { return nil }
         if let rest = super.parse(input: input) {
             // Add this cell to the model
+//            expression.set(context: cellRef.cellReference!)
             let contents = CellContents(expression: expression.stringValue!, value: expression.calculatedValue)
             Cells.add(cellRef.cellReference!, contents)
             let spreadsheet = GRSpreadsheet()
@@ -110,7 +132,7 @@ class GRAssignment : GRNonTerminal {
 
 
 /// A GrammarRule for handling: Expression -> ProductTerm ExpressionTail | QuotedString
-class GRExpression : GRNonTerminal {
+class GRExpression : GRContextual {
     let num = GRProductTerm()
     let exprTail = GRExpressionTail()
     let quotedString = GRQuotedString()
@@ -137,7 +159,7 @@ class GRExpression : GRNonTerminal {
 }
 
 /// A GrammarRule for handling: ExpressionTail -> "+" ProductTerm ExpressionTail | Epsilon
-class GRExpressionTail : GRNonTerminal {
+class GRExpressionTail : GRContextual {
     let plus = GRLiteral(literal: "+")
     let num = GRProductTerm()
     
@@ -168,7 +190,7 @@ class GRExpressionTail : GRNonTerminal {
 }
 
 /// A Grammar Rule for handling ProductTerm -> Integer ProductTermTail
-class GRProductTerm : GRNonTerminal {
+class GRProductTerm : GRContextual {
     let num = GRValue()
     let productTail = GRProductTermTail()
     
@@ -190,7 +212,7 @@ class GRProductTerm : GRNonTerminal {
 }
 
 /// A Grammar Rule for handling ProductTermTail -> "*" Value ProductTermTail | epsilon
-class GRProductTermTail : GRNonTerminal {
+class GRProductTermTail : GRContextual {
     let times = GRLiteral(literal: "*")
     let num = GRValue()
     
@@ -252,7 +274,7 @@ class GRRowNumber : GRNonTerminal {
 }
 
 /// A subclass of GRNonTerminal to make sure all state gets wiped for Grammar rules that have a cell reference.
-class GRCell : GRNonTerminal {
+class GRCell : GRContextual {
     var cellReference: CellReference?
     
     override func nilify() {
@@ -293,9 +315,11 @@ class GRRelativeCell : GRCell {
     
     override func parse(input: String) -> String? {
         if let rest = super.parse(input: input) {
-            if let context = Cells.currentContext {
-                cellReference = CellReference(context: context, rowOffset: row.calculatedValue.get()!, colOffset: col.calculatedValue.get()!)
-                return rest
+            if let context = self.context {
+                if let ref = CellReference(context: context, rowOffset: row.calculatedValue.get()!, colOffset: col.calculatedValue.get()!) {
+                    cellReference = ref
+                    return rest
+                }
             }
         }
         self.nilify()
@@ -314,10 +338,8 @@ class GRCellReference : GRCell {
 
     override func parse(input: String) -> String? {
         if let rest = super.parse(input: input) {
-            if(currentRuleSet?[0] === absolute) {
-                cellReference = absolute.cellReference
-            } else if(currentRuleSet?[0] === relative) {
-               cellReference = relative.cellReference
+            if let cell = currentRuleSet?[0] as? GRCell {
+                cellReference = cell.cellReference
             }
             return rest
         }
@@ -327,7 +349,7 @@ class GRCellReference : GRCell {
 
 
 /// A Grammar Rule for handling Value -> CellReference | Integer
-class GRValue : GRNonTerminal {
+class GRValue : GRContextual {
     let reference = GRCellReference()
     let number = GRInteger()
     
@@ -337,19 +359,15 @@ class GRValue : GRNonTerminal {
     
     override func parse(input: String) -> String? {
         if let rest = super.parse(input: input) {
-            if(currentRuleSet?[0] === reference) {
-                self.calculatedValue = Cells.get(reference.cellReference!).value.copy()
-                if Cells.currentContext != nil {
-                    Cells.addDependency(cell: Cells.currentContext!, dependentOn: reference.cellReference!)
-                }
-            } else if currentRuleSet?[0] === number {
+            if let cell = currentRuleSet?[0] as? GRCell {
+                self.calculatedValue = Cells.getRefreshed(cell.cellReference!).value.copy()
+            } else {
                 self.calculatedValue = number.calculatedValue.copy()
             }
             return rest
         }
         return nil
     }
-
 }
 
 /// A Grammar Rule for handling QuotedString -> " StringNoQuote "

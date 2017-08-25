@@ -26,9 +26,9 @@ class ModelTests: XCTestCase {
     func testRelativeCell() {
         let cell1 = CellReference(colLabel: "AA", rowLabel: 3)
         let cell = CellReference(context: cell1, rowOffset: 20, colOffset: -1)
-        XCTAssertEqual(cell.absolute, "Z23")
-        XCTAssertEqual(cell.row, 22)
-        XCTAssertEqual(cell.column, 25)
+        XCTAssertEqual(cell?.absolute, "Z23")
+        XCTAssertEqual(cell?.row, 22)
+        XCTAssertEqual(cell?.column, 25)
     }
     
     func testColumnLetterToNumber() {

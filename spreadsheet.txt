@@ -1,12 +1,12 @@
 A1 := 1
 A2 := "covfefe"
 print_expr A2
-print_value A2*2
 print_value A1
 print_expr A1
 A2 := 2
 A3 := A1+A2
-print_expr A3
-print_value A3
+B4 := A3
+print_expr B4
+print_value B4
 A1:=r1c0+1
-print_value A3
+print_value B4
