@@ -1,0 +1,54 @@
+Report
+
+Intro
+
+My implementation for the recursive descent parser has two parts, functionality for parsing input according to the grammar, and a model for keeping track of what is in the spreadsheets' cells. I have written a different class for each grammar rule, as suggested by the skeleton code. Each grammar rule class has it's own allowed set of right hand side rule combinations, and a specific parsing method change set its string value and calculated value after input has been successfully parsed. I have been able to generalize some of this functionality across the grammar rules by adding some classes between the GrammarRule base class and the specific class for each grammar rule. The model I have used to keep track of the contents of cells is basically a dictionary of string integer pairs indexed by a cell reference, with some extra functionality to deal with stale data.
+
+To start with, instead of storing a grammar rule's calculated value as an integer, I have written a class which can essentially represent an operate on a calculated value as an integer or a string. This is necessary because spreadsheet convention dictates that the value of a cell can be a number or a string.
+
+Grammar Rules
+I have implemented parsing for the grammar using the class structure below:
+                GrammarRule
+    GRNonTerminal  Token   GRAssignment GRPrint
+    GRContextual
+GRCell        AllGrammarRules
+CellRules
+
+Tokens are grammar rules whose right hand side rules are terminal symbols. I have left the Token class as it was in the skeleton code and implemented the other Token grammar rules as sub classes of Token using the appropriate regular expressions.
+
+GRNonTerminal rules get their string value from their right hand side rules after a successful parse. This includes most of the rules in the grammar, so was a useful generalisation to make. The parse method for all GRNonTerminal uses the GrammarRule parse method given in the skeleton code, and then sets the current rules' string value to be the concatenation of its right hand side rules string values.
+
+GRContextual rules have state that may depend on a context cell. Relative cell references need a context cell to be expanded further. To begin with, I just used a single static variable to keep track of the current context cell, which was set on an assignment command and used on a print command. This approach was messy and hacky, and led to bugs when I began implementing the model. The cell context of a grammar rule is a object property, so I decided to implement it that way. GRContextual rules have an extra optional field that holds a CellReference. The only rule which needs this cell reference is the GRRelativeCell rule. All the rules that could contain a GRRelativeCell somewhere on their right hand side therefore need to hold a reference to a context cell too, so GRRelativeCell, GRCellReference, GRValue, GRProductTerm, GRProductTermTail, GRExpression, GRExpressionTail need to all be GRContextual rules.
+
+GRContextual rules have extra functionality to recursively set their context and the context of their right hand side rules. After input is successfully parsed as an AbsoluteCell, the context of the Expression part in the potential Assignment rule (Assignment -> AbsoluteCell := Expression Spreadsheet) is set to the AbsoluteCell part.  Since the set method in GRContextual is defined recursively, the context of any possible GRRelativeCell is known before any attempt to parse the input as one.
+
+GRCell rules are rules that have an extra optional field for a CellReference. They are a subset of GRContextual rules. GRAssignment and GRPrint inherit properties and functionality directly from GrammarRule, because they don't need to keep track of or alter any of the state that other grammar rules do, but they use the same base parse method from GrammarRule.
+
+The pattern here is that after a successful parse, the grammar rule sets some of its state by reaching into it's right hand side rules state and doing something with that state (whether it be multiplying, adding, concatenating, copying etc.). This reduces coupling because a grammar rule only ever looks into the state of it's right hand rules and never any deeper. Cohesion??? Coupling?????
+
+Model
+
+To evaluate expressions that have one or more references to cells, a model to keep track of the values and expressions stored in each cell is needed. The Spreadsheet class has a dictionary of CellContents indexed by CellReferences. CellContents are a string to represent the expression in a cell, and a CellValue to represent the value in a cell. a CellReference has a string that represents the absolute cell reference eg. A3 or CJK78, a row number, and a column number. A CellReference implements the Hashable protocol so that they can be used as keys in the dictionary. The functionality to resolve a relative cell reference is also in the CellReference class. I have also used this data type in my implementation of the grammar. Instances of CellReference represent the context cell of a GRContextual and the cell reference in a GRCell.
+
+The spreadsheet class wraps this dictionary with add and get functions. Adding data to the spreadsheet is straightforward. Data is added to the spreadsheet only by a successful parse as an assignment command. Data is retrieved from the spreadsheet model in two places. Whenever input is parsed as a GRCellReference, the expression and value associated with that cell reference are retrieved from the model. The second place is in the parse method for print commands. Whenever a print command is parsed, if the expression is just an absolute cell reference, the expression in that cell on the model is the expression expanded one step further and is useful for printed output. The implementation of the get function for the spreadsheet model is model complex than the add function, because expressions on the model need to be recursively re-parsed to make sure the cell values and expressions are up to date. For example,
+
+Z1 := 2 -> add(Z1, 2)
+A3 := Z1 -> add(A3, 2)
+Z1 := 4 -> add(Z1, 4)
+
+print_value A3 -> get(A3) -> 2 (but should be 4)
+
+Both times data from the model are retrieved by the parser, the expression in that cell on the model is re evaluated to keep everything up to date and correct. This causes problems for circular references, which lead to infinite recursion. I have assumed that this is a corner case to ignore, so a circular reference will crash the parser. For example:
+
+Z1 := Z2 -> add(Z1, Z2)
+Z2 := Z1 -> add(Z2, Z1)
+
+print_expr Z1 -> get(Z1) -> get(Z2) -> get(Z1) -> get(Z2) ... crash
+
+The Spreadsheet class is used in my implementation as a singleton class because all instances of all grammar rules need only to add data to and get data from one spreadsheet. I have chosen this over a static class with static properties and functions so that it can be used as a library if need be.
+
+Testing
+
+I have used XCode's test framework XCTest to test my parser. I have written unit tests for each grammar rule as I have written the rules. The tests for each grammar rule check whether the parse functions consume the correct part of the input or not, and whether the correct state is computed and recorded. This was a useful way to work. Each grammar rule was working correctly before I wrote the next one, so I was able to debug each grammar rule knowing any failed tests were due to that grammar rule. I have also written unit tests for checking the basic elements of the spreadsheet model such as add and get, and the hashability of the CellReference etc.
+
+Testing the print and assignment rules were slightly different as they introduce interactions between the grammar parsing and adding and retrieving from the spreadsheet model. For testing the assignment rule, I have tested the parser against the model to make sure parsing assignment commands resulted in adding the correct data to the model. I have tested the print command without the XCTest Assert statements, and have relied on checking the printed output by hand to make sure it matches up with expectations. The expectations for all of my tests are clearly outlined in the comments in my test code.

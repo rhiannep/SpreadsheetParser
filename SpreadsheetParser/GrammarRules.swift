@@ -1,5 +1,5 @@
 //
-//  SpreadsheetGrammar.swift
+//  GrammarRules.swift
 //  COSC346 Assignment 1
 //
 //
@@ -7,58 +7,16 @@
 import Foundation
 
 class GRSpreadsheet : GrammarRule {
-    let aGRPrint = GRPrint()
-    let aGRAssignment = GRAssignment()
+    let print = GRPrint()
+    let assignment = GRAssignment()
     init(){
-        super.init(rhsRules: [[aGRAssignment], [aGRPrint], [Epsilon.theEpsilon]])
+        super.init(rhsRules: [[assignment], [print], [Epsilon.theEpsilon]])
     }
 }
 
-/**
- * A GRNonTerminal is a GrammarRule thats right hand side rules contain non token grammar rules.
- * The string value of a non-terminal rule is composed of the string values
- * of the right hand side rules that were applied in a successful parse. The calculated value of a rule is
- * not calculated here because the calculated value is specific to each rule.
- */
-class GRNonTerminal : GrammarRule {
-    override func parse(input: String) -> String? {
-        if let rest = super.parse(input: input) {
-            if self.currentRuleSet != nil {
-                var buildString = ""
-                for rule in self.currentRuleSet! {
-                    if !(rule.rhsIsEpsilon() || rule is Epsilon) {
-                        buildString += rule.stringValue!
-                    }
-                }
-                if !self.rhsIsEpsilon() { self.stringValue = buildString }
-            }
-            return rest
-        }
-        return nil
-    }
-}
-
-class GRContextual : GRNonTerminal {
-    var context : CellReference?
-    
-    func set(context: CellReference?) {
-        self.context = context
-        for ruleChoice in self.rhs {
-            for rule in ruleChoice {
-                if let contextRule = rule as? GRContextual {
-                    contextRule.set(context: context)
-                }
-            }
-        }
-    }
-    
-    override func nilify() {
-        super.nilify()
-        self.context = nil
-    }
-}
-
-class GRPrint : GRNonTerminal {
+// GrammarRule Parsing for print statements
+// Print -> print_expr Expression Spreadsheet | print_value Expression Spreadsheet
+class GRPrint : GrammarRule {
     let printValue = GRLiteral(literal: "print_value")
     let printExpression = GRLiteral(literal: "print_expr")
     let expression = GRExpression()
@@ -67,29 +25,32 @@ class GRPrint : GRNonTerminal {
         super.init(rhsRules: [[printValue, expression], [printExpression, expression]])
     }
     
+    // If the input is parsed successfully as a print statement, the appropriate output
+    // is printed to stdout depending on the print statement
     override func parse(input: String) -> String? {
         if let rest = super.parse(input: input) {
-//            Cells.currentContext = nil
-            if let cell = Cells.getRefreshed(expression.stringValue!) {
-//                cell = Cells.getRefreshed(expression.stringValue!)!
+            if let cell = Spreadsheet.theSpreadsheet.get(expression.stringValue!) {
+                // If the expression was a reference to a cell, print the value or expression in the cell
                 if(currentRuleSet?[0] === printExpression) {
                     print("Expression in cell \(expression.stringValue!) is \(cell.expression)")
                 } else {
                     print("Value of cell \(expression.stringValue!) is \(cell.value.describing())")
                 }
             } else {
+                // If the expression was not a reference to a cell, print the value or expression
+                // A less typical use case
                 if(currentRuleSet?[0] === printExpression) {
                     print("Expression is \(expression.stringValue!)")
                 } else {
                     print("Value is \(expression.calculatedValue.describing())")
                 }
             }
+            
+            // Recursive part of the grammar. Parse the rest as a spreadsheet (which could be epsilon)
             let spreadsheet = GRSpreadsheet()
-            if let restOfRest = spreadsheet.parse(input: rest) {
-                currentRuleSet?.append(spreadsheet)
-                return restOfRest
-            }
-            return rest
+            let restOfRest = spreadsheet.parse(input: rest)
+            currentRuleSet?.append(spreadsheet)
+            return restOfRest
         }
         return nil
     }
@@ -99,7 +60,7 @@ class GRPrint : GRNonTerminal {
 /// The parse method here saves the string value and calculated value of the expression on the model
 /// for later access. If the parse is successful, the current context cell is se to the cell on 
 /// the lhs of the assignment.
-class GRAssignment : GRNonTerminal {
+class GRAssignment : GrammarRule {
     let cellRef = GRAbsoluteCell()
     let equals = GRLiteral(literal: ":=")
     let expression = GRExpression()
@@ -109,22 +70,23 @@ class GRAssignment : GRNonTerminal {
     }
     
     override func parse(input: String) -> String? {
-        // Set the current context
+        // Try just parse as a cell reference first to get the context for the expression
         if cellRef.parse(input: input) != nil {
-//             Cells.currentContext = cellRef.cellReference!
             expression.set(context: cellRef.cellReference)
-        } else { return nil }
+        } else {
+            // Can return early if this preliminary parse fails
+            return nil
+        }
         if let rest = super.parse(input: input) {
-            // Add this cell to the model
-//            expression.set(context: cellRef.cellReference!)
+            // Store this expression and value in the model on a succeful parse
             let contents = CellContents(expression: expression.stringValue!, value: expression.calculatedValue)
-            Cells.add(cellRef.cellReference!, contents)
+            Spreadsheet.theSpreadsheet.add(cellRef.cellReference!, contents)
+            
+            // Recursive part of the grammar. Parse the rest as a spreadsheet (which could be epsilon)
             let spreadsheet = GRSpreadsheet()
-            if let restOfRest = spreadsheet.parse(input: rest) {
-                currentRuleSet?.append(spreadsheet)
-                return restOfRest
-            }
-            return rest
+            let restOfRest = spreadsheet.parse(input: rest)
+            currentRuleSet?.append(spreadsheet)
+            return restOfRest
         }
         return nil
     }
@@ -167,18 +129,24 @@ class GRExpressionTail : GRContextual {
         super.init(rhsRules: [[plus, num], [Epsilon.theEpsilon]])
     }
     
-    // A hacky implementation of the recursive tail part. If the input was successfully parsed as -> "*" Integer
+    // An implementation of the recursive tail part. If the input was successfully parsed as "*" Integer
     // A second GRProductTailTerm is instantiated, and then given the remaining input to try and parse itself.
     // If successful, the tails state are passed up to this instance and this instances state is adjusted accordingly.
     // I would have like to make this more object oriented by using the Epsilon parse differently but can't work it out.
     override func parse(input: String) -> String? {
         if let rest = super.parse(input: input) {
-            if self.rhsIsEpsilon() { return input } // This must be an Epsilon parse so no need to record state or do a second parse.
+            if self.rhsIsEpsilon() {
+                // This must be an Epsilon parse so no need to record state or do a second parse.
+                return input
+            }
             self.calculatedValue = num.calculatedValue.copy()
             let tail = GRExpressionTail()
             if let restOfRest = tail.parse(input: rest) {
                 self.currentRuleSet?.append(tail)
-                if tail.rhsIsEpsilon() { return rest } // Tail must be Epsilon, so return without updating state
+                if tail.rhsIsEpsilon() {
+                    // Tail must be Epsilon, so return without updating state
+                    return rest
+                }
                 self.calculatedValue += tail.calculatedValue
                 self.stringValue! += tail.stringValue!
                 return restOfRest
@@ -191,18 +159,18 @@ class GRExpressionTail : GRContextual {
 
 /// A Grammar Rule for handling ProductTerm -> Integer ProductTermTail
 class GRProductTerm : GRContextual {
-    let num = GRValue()
-    let productTail = GRProductTermTail()
+    let number = GRValue()
+    let tail = GRProductTermTail()
     
     init(){
-        super.init(rhsRule: [num, productTail])
+        super.init(rhsRule: [number, tail])
     }
     override func parse(input: String) -> String? {
         if let rest = super.parse(input:input) {
-            if productTail.rhsIsEpsilon(){
-              self.calculatedValue = num.calculatedValue.copy()
+            if tail.rhsIsEpsilon(){
+              self.calculatedValue = number.calculatedValue.copy()
             } else {
-              self.calculatedValue = num.calculatedValue * productTail.calculatedValue
+              self.calculatedValue = number.calculatedValue * tail.calculatedValue
             }
             return rest
         }
@@ -220,10 +188,9 @@ class GRProductTermTail : GRContextual {
         super.init(rhsRules: [[times, num], [Epsilon.theEpsilon]])
     }
     
-    // A hacky implementation of the recursive tail part. If the input was successfully parsed as -> "*" Integer
+    // An implementation of the recursive tail part. If the input was successfully parsed as -> "*" Integer
     // A second GRProductTailTerm is instantiated, and then given the remaining input to try and parse itself.
     // If successful, the tails values are passed up to this instance and this instances state is adjusted accordingly.
-    // I would have like to make this more object oriented by using the Epsilon parse but can't work it out.
     override func parse(input: String) -> String? {
         if let rest = super.parse(input: input) {
             if self.rhsIsEpsilon() {
@@ -263,24 +230,6 @@ class GRRowNumber : GRNonTerminal {
     init() {
         super.init(rhsRule: [label])
     }
-    override func parse(input: String) -> String? {
-        if let rest = super.parse(input: input) {
-            self.calculatedValue = label.calculatedValue.copy()
-            return rest
-        }
-        return nil
-    }
-    
-}
-
-/// A subclass of GRNonTerminal to make sure all state gets wiped for Grammar rules that have a cell reference.
-class GRCell : GRContextual {
-    var cellReference: CellReference?
-    
-    override func nilify() {
-        super.nilify()
-        cellReference = nil
-    }
 }
 
 /// A Grammar Rule for handling AbsoluteCell -> ColumnLabel RowNumber
@@ -288,14 +237,13 @@ class GRAbsoluteCell : GRCell {
     let col = GRColumnLabel()
     let row = GRRowNumber()
 
-    
     init() {
         super.init(rhsRule: [col, row])
     }
     
     override func parse(input: String) -> String? {
         if let rest = super.parse(input: input) {
-            cellReference = CellReference(colLabel: col.stringValue!, rowLabel: row.calculatedValue.get()!)
+            cellReference = CellReference(colLabel: col.stringValue!, rowLabel: Int(row.stringValue!)!)
             return rest
         }
         return nil
@@ -360,7 +308,7 @@ class GRValue : GRContextual {
     override func parse(input: String) -> String? {
         if let rest = super.parse(input: input) {
             if let cell = currentRuleSet?[0] as? GRCell {
-                self.calculatedValue = Cells.getRefreshed(cell.cellReference!).value.copy()
+                self.calculatedValue = Spreadsheet.theSpreadsheet.get(cell.cellReference!).value.copy()
             } else {
                 self.calculatedValue = number.calculatedValue.copy()
             }

@@ -20,7 +20,7 @@ class GrammarTests: XCTestCase {
         super.tearDown()
         
         // Clear the model between each unit test
-        Cells.clear()
+        Spreadsheet.theSpreadsheet.clear()
     }
     
     func testGRIntegerParsing() {
@@ -152,7 +152,6 @@ class GrammarTests: XCTestCase {
         // Calculated value should be 20000
         let validRowNumber = "20000-"
         XCTAssertEqual(aGRRowNumber.parse(input: validRowNumber), "-")
-        XCTAssertEqual(aGRRowNumber.calculatedValue.get(), 20000)
         XCTAssertEqual(aGRRowNumber.stringValue, "20000")
         
         // Parsing "-2000" should consume nothing, and leave nothing
@@ -195,7 +194,7 @@ class GrammarTests: XCTestCase {
         
         // With Z1/r1c25 on the model, Parsing "*5*Z1" should consume and record the "*5*Z1", and leave the empty string
         // With the value in Z1 being 6, calculated value should be 5*6 = 30
-        Cells.add(CellReference(colLabel: "Z", rowLabel: 1), CellContents(expression: "2*3", value: cellValue))
+        Spreadsheet.theSpreadsheet.add(CellReference(colLabel: "Z", rowLabel: 1), CellContents(expression: "2*3", value: cellValue))
         let timesCellRef1 = "*5*Z1"
         XCTAssertEqual(aGRproductTermTail.parse(input: timesCellRef1), "")
         XCTAssertEqual(aGRproductTermTail.calculatedValue.get(), 30)
@@ -236,7 +235,7 @@ class GrammarTests: XCTestCase {
         
         // Parsing "5*Z1*10" should consume and record the "5*Z1*10", and leave the empty string
         // With the value in Z1/r1c25 being 6, calculated value should be 5*6*10 = 300
-        Cells.add(CellReference(colLabel: "Z", rowLabel: 1), CellContents(expression: "2*3", value: cellValue))
+        Spreadsheet.theSpreadsheet.add(CellReference(colLabel: "Z", rowLabel: 1), CellContents(expression: "2*3", value: cellValue))
         let timesCellRef1 = "5*Z1*10"
         XCTAssertEqual(aGRproductTerm.parse(input: timesCellRef1), "")
         XCTAssertEqual(aGRproductTerm.calculatedValue.get(), 300)
@@ -280,8 +279,8 @@ class GrammarTests: XCTestCase {
         XCTAssertNil(aGRExpressionTail.calculatedValue.get())
         XCTAssertNil(aGRExpressionTail.stringValue)
         
-        Cells.add(CellReference(colLabel: "Z", rowLabel: 1), CellContents(expression: "1*6", value: cellValue6))
-        Cells.add(CellReference(colLabel: "AA", rowLabel: 1), CellContents(expression: "1*2+0", value: cellValue2))
+        Spreadsheet.theSpreadsheet.add(CellReference(colLabel: "Z", rowLabel: 1), CellContents(expression: "1*6", value: cellValue6))
+        Spreadsheet.theSpreadsheet.add(CellReference(colLabel: "AA", rowLabel: 1), CellContents(expression: "1*2+0", value: cellValue2))
         
         let timesCellRef1 = "+5*Z1"
         XCTAssertEqual(aGRExpressionTail.parse(input: timesCellRef1), "")
@@ -332,9 +331,9 @@ class GrammarTests: XCTestCase {
         XCTAssertNil(aGRExpression.stringValue)
         
         // Z1 = 6
-        Cells.add(CellReference(colLabel: "Z", rowLabel: 1), CellContents(expression: "2*3", value: cellValue6))
+        Spreadsheet.theSpreadsheet.add(CellReference(colLabel: "Z", rowLabel: 1), CellContents(expression: "2*3", value: cellValue6))
         // AA2 = 2
-        Cells.add(CellReference(colLabel: "AA", rowLabel: 2), CellContents(expression: "2*3", value: cellValue2))
+        Spreadsheet.theSpreadsheet.add(CellReference(colLabel: "AA", rowLabel: 2), CellContents(expression: "2*3", value: cellValue2))
         
         let timesCellRef1 = "5*Z1+"
         XCTAssertEqual(aGRExpression.parse(input: timesCellRef1), "+")
@@ -344,7 +343,7 @@ class GrammarTests: XCTestCase {
         let justACellReference = "Z1"
         XCTAssertEqual(aGRExpression.parse(input: justACellReference), "")
         XCTAssertEqual(aGRExpression.calculatedValue.get(), 6)
-        XCTAssertEqual(Cells.get("Z1")?.value.get(), 6)
+        XCTAssertEqual(Spreadsheet.theSpreadsheet.get("Z1")?.value.get(), 6)
         XCTAssertEqual(aGRExpression.stringValue, justACellReference)
     }
     
@@ -353,7 +352,7 @@ class GrammarTests: XCTestCase {
     // Irrelevant
     func testGRRelativeCellParsing() {
         let aGRRelativeCell = GRRelativeCell()
-        Cells.add(CellReference(colLabel: "Z", rowLabel: 12), CellContents(expression: "3+10*2", value: CellValue(23)))
+        Spreadsheet.theSpreadsheet.add(CellReference(colLabel: "Z", rowLabel: 12), CellContents(expression: "3+10*2", value: CellValue(23)))
         aGRRelativeCell.set(context: CellReference(colLabel: "D", rowLabel: 12))
         
         
@@ -391,9 +390,6 @@ class GrammarTests: XCTestCase {
     
     func testGRCellReferenceParsing() {
         let aGRCellReference = GRCellReference()
-        
-        // With a current context
-        Cells.currentContext = CellReference(colLabel: "A", rowLabel: 1)
         let validRelativeCell = "r40c10"
         
         //With no current cell context
@@ -432,7 +428,7 @@ class GrammarTests: XCTestCase {
         // Parsing "Z1" should consume "Z1" and leave ""
         // The calculated value should be 53 because there has now been a cell added at Z1
         let relativeCellRef3 = "Z1"
-        Cells.add(CellReference(colLabel: "Z", rowLabel: 1), CellContents(expression: "50+1+2", value: cellValue53))
+        Spreadsheet.theSpreadsheet.add(CellReference(colLabel: "Z", rowLabel: 1), CellContents(expression: "50+1+2", value: cellValue53))
         XCTAssertEqual(aGRValue.parse(input: relativeCellRef3), "")
         XCTAssertEqual(aGRValue.calculatedValue.get(), 53)
         XCTAssertEqual(aGRValue.stringValue, relativeCellRef3)
@@ -465,9 +461,9 @@ class GrammarTests: XCTestCase {
         
         //A3 := A2 * A3 = 4 * 2
         // Current context is now all fucked
-        XCTAssertEqual(assignment.parse(input: "A3 := r-1c0*r0c0"), "")
-        XCTAssertEqual(Cells.get(A3).expression, "r-1c0*r0c0")
-        XCTAssertEqual(Cells.get(A3).value.get(), 0)
+        XCTAssertEqual(assignment.parse(input: "A3 := r-1c0"), "")
+        XCTAssertEqual(Spreadsheet.theSpreadsheet.get(A3).expression, "r-1c0")
+        XCTAssertEqual(Spreadsheet.theSpreadsheet.get(A3).value.get(), 0)
         
         XCTAssertNil(assignment.parse(input: "r1c1 := 12"))
         
@@ -475,18 +471,18 @@ class GrammarTests: XCTestCase {
         // Test that assignment expressions are parsed in the correct order.
         //        let multipleAssignments = "A3 := 3 A2 := A3*2 A3 := A2*2 A2 := A3*2"
         //        XCTAssertEqual(assignment.parse(input: multipleAssignments), "")
-        //        XCTAssertEqual(Cells.get(A3).expression, "A2*2")
-        //        XCTAssertEqual(Cells.get(A3).value.get(), 12)
-        //        XCTAssertEqual(Cells.get(A2).expression, "A3*2")
-        //        XCTAssertEqual(Cells.get(A2).value.get(), 24)
+        //        XCTAssertEqual(Spreadsheet.theSpreadsheet.get(A3).expression, "A2*2")
+        //        XCTAssertEqual(Spreadsheet.theSpreadsheet.get(A3).value.get(), 12)
+        //        XCTAssertEqual(Spreadsheet.theSpreadsheet.get(A2).expression, "A3*2")
+        //        XCTAssertEqual(Spreadsheet.theSpreadsheet.get(A2).value.get(), 24)
         
         // Test relative cell assignment
         // A2 := 2
         // A3 := A2*2 = 4
 //        XCTAssertEqual(assignment.parse(input: "A2 := 2"), "")
 //        XCTAssertEqual(assignment.parse(input: "A3 := r-1c0*2"), "")
-//        XCTAssertEqual(Cells.get(A3).expression, "r-1c0*2")
-//        XCTAssertEqual(Cells.get(A3).value.get(), 4)
+//        XCTAssertEqual(Spreadsheet.theSpreadsheet.get(A3).expression, "r-1c0*2")
+//        XCTAssertEqual(Spreadsheet.theSpreadsheet.get(A3).value.get(), 4)
         
     }
     
@@ -499,30 +495,30 @@ class GrammarTests: XCTestCase {
         let A2equals5 = "A2 := 5"
         
         XCTAssertEqual(assignment.parse(input: A2equals5), "")
-        XCTAssertEqual(Cells.get(A2).expression, "5")
-        XCTAssertEqual(Cells.get(A2).value.get(), 5)
+        XCTAssertEqual(Spreadsheet.theSpreadsheet.get(A2).expression, "5")
+        XCTAssertEqual(Spreadsheet.theSpreadsheet.get(A2).value.get(), 5)
         
-        let A2equalsA2 = "A2 := A2 + 1"
+        let A2equalsA2 = "A2 := A3 + 1"
         XCTAssertEqual(assignment.parse(input: A2equalsA2), "")
-        XCTAssertEqual(Cells.get(A2).expression, "A2+1")
-        XCTAssertEqual(Cells.get(A2).value.get(), 6)
+        XCTAssertEqual(Spreadsheet.theSpreadsheet.get(A2).expression, "A3+1")
+        XCTAssertEqual(Spreadsheet.theSpreadsheet.get(A2).value.get(), 1)
         
         let A2equalsHello = "A2 := \" hello\""
         
         XCTAssertEqual(assignment.parse(input: A2equalsHello), "")
-        XCTAssertEqual(Cells.get(A2).expression, "\" hello\"")
-        XCTAssertEqual(Cells.get(A2).value.describing(), "\" hello\"")
+        XCTAssertEqual(Spreadsheet.theSpreadsheet.get(A2).expression, "\" hello\"")
+        XCTAssertEqual(Spreadsheet.theSpreadsheet.get(A2).value.describing(), "\" hello\"")
         
         let A2equalsTimes = "A2 := 40*2+2*4hello"
         
         XCTAssertEqual(assignment.parse(input: A2equalsTimes), "hello")
-        XCTAssertEqual(Cells.get(A2).expression, "40*2+2*4")
-        XCTAssertEqual(Cells.get(A2).value.get(), 88)
+        XCTAssertEqual(Spreadsheet.theSpreadsheet.get(A2).expression, "40*2+2*4")
+        XCTAssertEqual(Spreadsheet.theSpreadsheet.get(A2).value.get(), 88)
         
         let A3equalsA2 = "A3 := A2+A2"
         XCTAssertEqual(assignment.parse(input: A3equalsA2), "")
-        XCTAssertEqual(Cells.get(A3).expression, "A2+A2")
-        XCTAssertEqual(Cells.get(A3).value.get(), 176)
+        XCTAssertEqual(Spreadsheet.theSpreadsheet.get(A3).expression, "A2+A2")
+        XCTAssertEqual(Spreadsheet.theSpreadsheet.get(A3).value.get(), 176)
         
         
         let invalidExpression1 = "A3 := +40*2+2*4hello"
@@ -534,8 +530,8 @@ class GrammarTests: XCTestCase {
         // A1 := A3 * 3 = 12
         XCTAssertEqual(assignment.parse(input: "A3 := 4"), "")
         XCTAssertEqual(assignment.parse(input: "A1 := A3*3"), "")
-        XCTAssertEqual(Cells.get(A1).expression, "A3*3")
-        XCTAssertEqual(Cells.get(A1).value.get(), 12)
+        XCTAssertEqual(Spreadsheet.theSpreadsheet.get(A1).expression, "A3*3")
+        XCTAssertEqual(Spreadsheet.theSpreadsheet.get(A1).value.get(), 12)
     }
     
     func testGRPrint() {
@@ -556,6 +552,10 @@ class GrammarTests: XCTestCase {
         XCTAssertEqual(print.parse(input: "print_expr Z3 print_value Z3"), "")
 
         XCTAssertEqual(print.parse(input: "print_expr 6*7+2 print_value 6+7+2"), "")
+        
+        // Z2 = 3, Z3 = Z1+Z2 = 22, Z3 + 1 = Z1+Z2+1 = 21+3+1 = 25
+        XCTAssertEqual(assignment.parse(input: "Z2 := 3"), "")
+        XCTAssertEqual(print.parse(input: "print_value Z3+1"), "")
         
         XCTAssertNil(print.parse(input: "Print_expr 34*2"))
     }

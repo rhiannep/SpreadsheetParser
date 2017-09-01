@@ -9,52 +9,28 @@
 import Foundation
 
 /**
- * A struct for a dictionary of cell contents
+  A singleton class for storing the values of spreadsheet expressions once the input has been successfully parsed
  */
-struct Cells {
-    static var currentContext : CellReference? = nil
-    static private var cells = [CellReference: CellContents]()
-    static private var dependencies = [CellReference: [CellReference]]()
+class Spreadsheet {
+    static let theSpreadsheet = Spreadsheet()
     
-    static func add(_ ref : CellReference, _ contents: CellContents) {
+    private var cells = [CellReference: CellContents]()
+    private var dependencies = [CellReference: [CellReference]]()
+    
+    // Add contents to the spreadsheet at the given cell
+    func add(_ ref : CellReference, _ contents: CellContents) {
         cells[ref] = contents
     }
-
     
-    static func get(_ key : String) -> CellContents? {
+    func get(_ key : String) -> CellContents? {
         let reference = GRCellReference()
-        
         if(reference.parse(input: key) == "") {
             return get(reference.cellReference!)
         }
         return nil
     }
     
-    static func get(_ key: CellReference) -> CellContents {
-        if cells[key] == nil {
-            return CellContents()
-        }
-        return cells[key]!
-    }
-    
-    static func refresh(_ cell: CellReference) {
-        let newExpression = GRExpression()
-        currentContext = cell
-        if newExpression.parse(input: (cells[cell]?.expression)!) != nil {
-            cells[cell] = CellContents(expression: newExpression.stringValue!, value: newExpression.calculatedValue)
-            currentContext = nil
-        }
-    }
-    
-    static func getRefreshed(_ key : String) -> CellContents? {
-        let reference = GRCellReference()
-        if(reference.parse(input: key) == "") {
-            return getRefreshed(reference.cellReference!)
-        }
-        return nil
-    }
-    
-    static func getRefreshed(_ ref : CellReference) -> CellContents {
+    func get(_ ref : CellReference) -> CellContents {
         let newExpression = GRExpression()
         newExpression.set(context: ref)
         if let cell = cells[ref] {
@@ -63,23 +39,18 @@ struct Cells {
                 return cells[ref]!
             }
         }
-        return CellContents()
+        return CellContents.theEmptyCell
     }
     
-    static func clear() {
+    func clear() {
         cells.removeAll()
     }
 }
 
 /**
- * A cell reference class to be used as keys in a set of Cells
- * Provides functionality for converting between absolute and relative
- * references in the two initialisers. I have indexed absolute cells from
- * A1 and relative references from r0c0. 
- *
- * The tricky bit here is mapping the column label eg C or ZAB on to a column number
- * or vice versa. My implementation treats the column labelling as a base 26 number system
- * with digits from A-Z
+ A cell reference class to be used as keys in a set of Cells. Provides functionality for converting from relative to absolute references.
+ 
+ The tricky bit here is mapping the column label eg C or ZAB on to a column number or vice versa.
  */
 class CellReference : Hashable {
     let absolute : String
@@ -93,7 +64,6 @@ class CellReference : Hashable {
     
     // Constructor takes arguments that directly translate to an absolute cell reference
     // and compute the row and column indexes
-    //
     init(colLabel : String, rowLabel : Int) {
         absolute = colLabel + String(rowLabel)
         
@@ -113,7 +83,10 @@ class CellReference : Hashable {
         column = columnNumber - 1
     }
     
-    // Constructor takes an existing cell reference and computes
+    /**
+     Constructor takes an existing cell reference and computes the new row and column number, and the corresponding column label as a letter.
+     This initialiser can return nil, as a relative cell reference could be invalid, ie a relative cell reference could go out of range of the spreadsheet.
+    */
     init?(context: CellReference, rowOffset: Int, colOffset: Int) {
         if context.row + rowOffset < 0 || context.column + colOffset < 0 {
             return nil
@@ -142,87 +115,12 @@ class CellReference : Hashable {
     }
 }
 
-class CellValue {
-    private var string : String?
-    private var calculatedValue : Int?
-    
-    init() {
-        string = nil
-        calculatedValue = nil
-    }
-    
-    convenience init(_ number: Int) {
-        self.init()
-        calculatedValue = number
-    }
-    
-    func set(number: Int){
-        self.calculatedValue = number
-    }
-    
-    func set(string: String) {
-        self.string = string;
-    }
-    
-    func get() -> Int? {
-        return self.calculatedValue
-    }
-    
-    func describing() -> String {
-        if self.string != nil {
-            return string!
-        }
-        if self.calculatedValue != nil {
-            return String(describing: self.calculatedValue!)
-        }
-        return ""
-    }
-    
-    func copy() -> CellValue {
-        let copy = CellValue()
-        if self.string != nil {
-            copy.set(string: self.string!)
-        }
-        
-        if self.calculatedValue != nil {
-            copy.set(number: self.calculatedValue!)
-        }
-        return copy
-    }
-    
-    static func +=(cellValue1: CellValue, cellValue2: CellValue) {
-        if cellValue1.get() != nil && cellValue2.get() != nil {
-            cellValue1.set(number: cellValue1.get()! + cellValue2.get()!)
-        }
-    }
-    
-    static func *=(cellValue1: CellValue, cellValue2: CellValue) {
-        if cellValue1.get() != nil && cellValue2.get() != nil {
-            cellValue1.set(number: cellValue1.get()! * cellValue2.get()!)
-        }
-    }
-    
-    static func +(cellValue1: CellValue, cellValue2: CellValue) -> CellValue {
-        let newCellValue = CellValue()
-        if cellValue1.get() != nil && cellValue2.get() != nil {
-            newCellValue.set(number: cellValue1.get()! + cellValue2.get()!)
-        }
-        return newCellValue
-    }
-    
-    static func *(cellValue1: CellValue, cellValue2: CellValue) -> CellValue {
-        let newCellValue = CellValue()
-        if cellValue1.get() != nil && cellValue2.get() != nil {
-            newCellValue.set(number: cellValue1.get()! * cellValue2.get()!)
-        }
-        return newCellValue
-    }
-}
-
 /**
- * A struct to store the expression and value found in a cell of a Spreadsheet.
+ A struct to store the expression and value found in a cell of a Spreadsheet.
  */
 struct CellContents {
-    var expression : String = ""
-    var value = CellValue(0)
+    var expression : String
+    var value : CellValue
+    
+    static let theEmptyCell = CellContents(expression: "", value: CellValue(0))
 }

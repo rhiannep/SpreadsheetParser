@@ -8,7 +8,7 @@
 
 import Foundation
 
-if CommandLine.arguments.count>1 {
+if CommandLine.arguments.count > 1 {
     var filenames = CommandLine.arguments
     filenames.removeFirst() // first argument is the name of the executable
     
