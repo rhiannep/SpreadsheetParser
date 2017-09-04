@@ -39,6 +39,14 @@ class GrammarRule {
         rhs = [rhsRule]
     }
     
+    func getCalculatedValue() -> CellValue {
+        return calculatedValue
+    }
+    
+    func getStringValue() -> String? {
+        return stringValue
+    }
+    
     /**
      The GrammarRule parse method will try each right-hand-side GrammarRule in turn until one succeeds, or returns nil otherwise.
      */

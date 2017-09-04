@@ -3,7 +3,7 @@
 //  COSC346 Assignment 1
 //
 // Implementations of each individual grammar rule, most of which inherit from one of the base classes.
-// each is composed of different right hand side rules and has its own specialised parse method
+// eEach is composed of different right hand side rules and has its own specialised parse method.
 //
 
 import Foundation
@@ -60,7 +60,7 @@ class GRPrint : GrammarRule {
 
 /// A GrammarRule for handling: Assignment -> AbsoluteCell := Expression Spreadsheet
 /// The parse method here saves the string value and calculated value of the expression on the model
-/// for later access. If the parse is successful, the current context cell is se to the cell on 
+/// for later access. If the parse is successful, the current context cell is set to the cell on
 /// the lhs of the assignment.
 class GRAssignment : GrammarRule {
     let cellRef = GRAbsoluteCell()

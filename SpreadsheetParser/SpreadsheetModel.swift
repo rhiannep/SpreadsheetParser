@@ -14,10 +14,12 @@ import Foundation
   A singleton class for storing the values of spreadsheet expressions once the input has been successfully parsed
  */
 class Spreadsheet {
+    
+    // the singleton instance of spreadsheet
     static let theSpreadsheet = Spreadsheet()
     
+    //cells of the spreadsheet are cell contents indexed by cell references
     private var cells = [CellReference: CellContents]()
-    private var dependencies = [CellReference: [CellReference]]()
     
     // Add contents to the spreadsheet at the given cell
     func add(_ ref : CellReference, _ contents: CellContents) {
@@ -128,5 +130,6 @@ struct CellContents {
     var expression : String
     var value : CellValue
     
+    // A singleton for an empty cell
     static let theEmptyCell = CellContents(expression: "", value: CellValue(0))
 }
