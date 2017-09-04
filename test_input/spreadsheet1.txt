@@ -9,3 +9,7 @@ print_value A3
 A2 := r-1c0+-2
 print_expr A3
 print_value A3
+print_expr B1
+print_value B1
+print_expr
+print_value

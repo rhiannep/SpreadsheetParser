@@ -152,13 +152,15 @@ class PrintAndAssignmentTests: XCTestCase {
     // A2 is then changed to A1-2 = 13-2 = 11, and the should be carried through to A3
     // print_expr A3 should print A2+1
     // print value A3 should print 12
+    //
+    // With nothing in B1, print expr B1 should print a description of nothing and print value B1 should print 0
     func testGRSpreadsheetParsing() {
         // check console for correct output
         let spreadsheet = GRSpreadsheet()
         
         print("Check following output:")
         
-        let tripleRef = "A1 := 12 A2 := A1+2 A3 := A2+1 print_expr A3 print_value A3 A1 := 13 print_expr A3 print_value A3 A2 := A1+-2 print_expr A3 print_value A3"
+        let tripleRef = "A1 := 12 A2 := A1+2 A3 := A2+1 print_expr A3 print_value A3 A1 := 13 print_expr A3 print_value A3 A2 := A1+-2 print_expr A3 print_value A3 print_expr B1 print_value B1"
         
         XCTAssertEqual(spreadsheet.parse(input: tripleRef), "")
         

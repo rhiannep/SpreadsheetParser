@@ -35,7 +35,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		1A7867951F3DDBF60062F050 /* tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		1A7867C41F3EA7440062F050 /* SpreadsheetModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SpreadsheetModel.swift; sourceTree = "<group>"; };
 		1A7867C61F3EC81A0062F050 /* ModelTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ModelTests.swift; sourceTree = "<group>"; };
 		1AD5A1E81F5BF90500F86E82 /* TokenTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TokenTests.swift; sourceTree = "<group>"; };
@@ -51,13 +50,6 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		1A7867921F3DDBF60062F050 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		1ADBE0681F3DBC1E005309F7 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -89,7 +81,6 @@
 			children = (
 				1ADBE06B1F3DBC1E005309F7 /* SpreadsheetParser */,
 				1ADBE0851F3DBD1A005309F7 /* GrammarTests.xctest */,
-				1A7867951F3DDBF60062F050 /* tests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -121,23 +112,6 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		1A7867941F3DDBF60062F050 /* tests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 1A78679A1F3DDBF60062F050 /* Build configuration list for PBXNativeTarget "tests" */;
-			buildPhases = (
-				1A7867911F3DDBF60062F050 /* Sources */,
-				1A7867921F3DDBF60062F050 /* Frameworks */,
-				1A7867931F3DDBF60062F050 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = tests;
-			productName = tests;
-			productReference = 1A7867951F3DDBF60062F050 /* tests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
 		1ADBE06A1F3DBC1E005309F7 /* SpreadsheetParser */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 1ADBE0721F3DBC1E005309F7 /* Build configuration list for PBXNativeTarget "SpreadsheetParser" */;
@@ -182,10 +156,6 @@
 				LastUpgradeCheck = 0830;
 				ORGANIZATIONNAME = "Rhianne Price";
 				TargetAttributes = {
-					1A7867941F3DDBF60062F050 = {
-						CreatedOnToolsVersion = 8.3.3;
-						ProvisioningStyle = Automatic;
-					};
 					1ADBE06A1F3DBC1E005309F7 = {
 						CreatedOnToolsVersion = 8.3.3;
 						ProvisioningStyle = Automatic;
@@ -210,19 +180,11 @@
 			targets = (
 				1ADBE06A1F3DBC1E005309F7 /* SpreadsheetParser */,
 				1ADBE0841F3DBD1A005309F7 /* GrammarTests */,
-				1A7867941F3DDBF60062F050 /* tests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		1A7867931F3DDBF60062F050 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		1ADBE0831F3DBD1A005309F7 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -233,13 +195,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		1A7867911F3DDBF60062F050 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		1ADBE0671F3DBC1E005309F7 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -270,32 +225,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		1A78679B1F3DDBF60062F050 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
-				INFOPLIST_FILE = tests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "rhianne-cosc346.tests";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_VERSION = 3.0;
-			};
-			name = Debug;
-		};
-		1A78679C1F3DDBF60062F050 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
-				INFOPLIST_FILE = tests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "rhianne-cosc346.tests";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
-				SWIFT_VERSION = 3.0;
-			};
-			name = Release;
-		};
 		1ADBE0701F3DBC1E005309F7 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -431,15 +360,6 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		1A78679A1F3DDBF60062F050 /* Build configuration list for PBXNativeTarget "tests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				1A78679B1F3DDBF60062F050 /* Debug */,
-				1A78679C1F3DDBF60062F050 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		1ADBE0661F3DBC1E005309F7 /* Build configuration list for PBXProject "SpreadsheetParser" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
