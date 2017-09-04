@@ -14,6 +14,8 @@
 		1A7867C51F3EA7440062F050 /* SpreadsheetModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7867C41F3EA7440062F050 /* SpreadsheetModel.swift */; };
 		1A7867C71F3EC81A0062F050 /* ModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7867C61F3EC81A0062F050 /* ModelTests.swift */; };
 		1A7867C81F3EC83D0062F050 /* SpreadsheetModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A7867C41F3EA7440062F050 /* SpreadsheetModel.swift */; };
+		1AD5A1E91F5BF90500F86E82 /* TokenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AD5A1E81F5BF90500F86E82 /* TokenTests.swift */; };
+		1AD5A1EB1F5CB1D100F86E82 /* PrintAndAssignmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AD5A1EA1F5CB1D100F86E82 /* PrintAndAssignmentTests.swift */; };
 		1ADBE06F1F3DBC1E005309F7 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ADBE06E1F3DBC1E005309F7 /* main.swift */; };
 		1ADBE07E1F3DBCED005309F7 /* BaseGrammar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ADBE07B1F3DBCED005309F7 /* BaseGrammar.swift */; };
 		1ADBE07F1F3DBCED005309F7 /* GrammarRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ADBE07C1F3DBCED005309F7 /* GrammarRules.swift */; };
@@ -36,6 +38,8 @@
 		1A7867951F3DDBF60062F050 /* tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		1A7867C41F3EA7440062F050 /* SpreadsheetModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SpreadsheetModel.swift; sourceTree = "<group>"; };
 		1A7867C61F3EC81A0062F050 /* ModelTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ModelTests.swift; sourceTree = "<group>"; };
+		1AD5A1E81F5BF90500F86E82 /* TokenTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TokenTests.swift; sourceTree = "<group>"; };
+		1AD5A1EA1F5CB1D100F86E82 /* PrintAndAssignmentTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PrintAndAssignmentTests.swift; sourceTree = "<group>"; };
 		1ADBE06B1F3DBC1E005309F7 /* SpreadsheetParser */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SpreadsheetParser; sourceTree = BUILT_PRODUCTS_DIR; };
 		1ADBE06E1F3DBC1E005309F7 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		1ADBE07B1F3DBCED005309F7 /* BaseGrammar.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BaseGrammar.swift; sourceTree = "<group>"; };
@@ -105,6 +109,8 @@
 		1ADBE0861F3DBD1A005309F7 /* GrammarTests */ = {
 			isa = PBXGroup;
 			children = (
+				1AD5A1EA1F5CB1D100F86E82 /* PrintAndAssignmentTests.swift */,
+				1AD5A1E81F5BF90500F86E82 /* TokenTests.swift */,
 				1A7867C61F3EC81A0062F050 /* ModelTests.swift */,
 				1ADBE0871F3DBD1A005309F7 /* GrammarTests.swift */,
 				1ADBE0891F3DBD1A005309F7 /* Info.plist */,
@@ -254,8 +260,10 @@
 				1A78679E1F3E90CA0062F050 /* GrammarTests.swift in Sources */,
 				1A7867C11F3E98220062F050 /* BaseGrammar.swift in Sources */,
 				1A7867C71F3EC81A0062F050 /* ModelTests.swift in Sources */,
+				1AD5A1EB1F5CB1D100F86E82 /* PrintAndAssignmentTests.swift in Sources */,
 				1A7867C81F3EC83D0062F050 /* SpreadsheetModel.swift in Sources */,
 				1A7867C31F3E98280062F050 /* Tokens.swift in Sources */,
+				1AD5A1E91F5BF90500F86E82 /* TokenTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1,0 +1,5 @@
+A1 := 12
+A2 := r-1c0+2
+A3 := r-1c0+1
+Print_expr A3
+print_value A3

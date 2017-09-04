@@ -17,7 +17,8 @@ class GrammarRule {
     
     /// A GrammarRule instance will have a stringValue when it parses something successfully
     var stringValue : String? = nil
-    /// A GrammarRule instance may have a calculatedValue, although really this should be in a subclass and is a hack to facilitate a simple example.
+    
+    /// A GrammarRule instance has an empty calculated value
     var calculatedValue = CellValue()
     
     /// Keep track of the rule set that has been successfully used in a parse
@@ -37,7 +38,7 @@ class GrammarRule {
     init(rhsRule : [GrammarRule]) {
         rhs = [rhsRule]
     }
-
+    
     /**
      The GrammarRule parse method will try each right-hand-side GrammarRule in turn until one succeeds, or returns nil otherwise.
      */
@@ -55,22 +56,15 @@ class GrammarRule {
                     continue ruleLoop
                 }
             }
-            currentRuleSet = ruleChoice // record which rules were used when something is parsed successfully
-            if rhsIsEpsilon() { nilify() }
+             // record which rules were used when something is parsed successfully
+            currentRuleSet = ruleChoice
+        
             return remainingInput
         }
         // Make each grammar rule instance reuseable, no old state is stored after an unsuccessful parse
-        nilify()
         return nil
     }
     
-    /**
-     Function to wipe the state of this grammar rule
-     */
-    func nilify() {
-        self.stringValue = nil
-        self.calculatedValue = CellValue()
-    }
     
     /**
      Checks if the most recent parse was an epsilon parse
@@ -106,12 +100,13 @@ class Epsilon : GrammarRule {
     /// theEpsilon is the instantiated singleton; thus is a class property.
     static let theEpsilon = Epsilon()
 }
+
 /**
- A GRNonTerminal is a grammar rule that has rhs rules that aren't tokens.
+ A NonTerminal is a grammar rule that has rhs rules that aren't tokens.
  After a successful parse, this grammar rules string value should be set to the concatenation of the string values of the rhs rules that were used in the parse.
  This allows for some generalisation of some of the parse functionality, but calulating the value for the grammar rule is more specific to each grammar rule.
  */
-class GRNonTerminal : GrammarRule {
+class NonTerminal : GrammarRule {
     override func parse(input: String) -> String? {
         if let rest = super.parse(input: input) {
             if self.currentRuleSet != nil {
@@ -134,9 +129,9 @@ class GRNonTerminal : GrammarRule {
 
 /**
  A class that adds more specificty to GrammarRule
- A GRContextual is a grammar rule that may need a context to be evaluated. A relative cell reference needs a cell to be relative to. Any grammar rule that could contain a relative cell needs to keep a reference to the context cell incase a relative cell comes up in a parse.
+ A ContextualRule is a grammar rule that may need a context to be evaluated. A relative cell reference needs a cell to be relative to. Any grammar rule that could contain a relative cell needs to keep a reference to the context cell incase a relative cell comes up in a parse.
  */
-class GRContextual : GRNonTerminal {
+class ContextualRule : NonTerminal {
     var context : CellReference?
     
     // Setting a grammar rule's context will recursively set all its context dependent rhs rules
@@ -144,28 +139,19 @@ class GRContextual : GRNonTerminal {
         self.context = context
         for ruleChoice in self.rhs {
             for rule in ruleChoice {
-                if let contextRule = rule as? GRContextual {
+                if let contextRule = rule as? ContextualRule {
                     contextRule.set(context: context)
                 }
             }
         }
     }
-    
-    // An extra field to nilify
-    override func nilify() {
-        super.nilify()
-        self.context = nil
-    }
 }
 
-/// A subclass of GRNonTerminal to make sure all state gets wiped for Grammar rules that have a cell reference.
-class GRCell : GRContextual {
+/**
+ A subclass of NonTerminal to make sure all state gets wiped for Grammar rules that have a cell reference.
+ */
+class CellRule : ContextualRule {
     var cellReference: CellReference?
-    
-    override func nilify() {
-        super.nilify()
-        cellReference = nil
-    }
 }
 
 /**

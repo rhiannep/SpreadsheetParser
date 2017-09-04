@@ -2,6 +2,8 @@
 //  GrammarRules.swift
 //  COSC346 Assignment 1
 //
+// Implementations of each individual grammar rule, most of which inherit from one of the base classes.
+// each is composed of different right hand side rules and has its own specialised parse method
 //
 
 import Foundation
@@ -94,7 +96,7 @@ class GRAssignment : GrammarRule {
 
 
 /// A GrammarRule for handling: Expression -> ProductTerm ExpressionTail | QuotedString
-class GRExpression : GRContextual {
+class GRExpression : ContextualRule {
     let num = GRProductTerm()
     let exprTail = GRExpressionTail()
     let quotedString = GRQuotedString()
@@ -115,13 +117,12 @@ class GRExpression : GRContextual {
             }
             return rest
         }
-        self.nilify()
         return nil
     }
 }
 
 /// A GrammarRule for handling: ExpressionTail -> "+" ProductTerm ExpressionTail | Epsilon
-class GRExpressionTail : GRContextual {
+class GRExpressionTail : ContextualRule {
     let plus = GRLiteral(literal: "+")
     let num = GRProductTerm()
     
@@ -158,7 +159,7 @@ class GRExpressionTail : GRContextual {
 }
 
 /// A Grammar Rule for handling ProductTerm -> Integer ProductTermTail
-class GRProductTerm : GRContextual {
+class GRProductTerm : ContextualRule {
     let number = GRValue()
     let tail = GRProductTermTail()
     
@@ -180,7 +181,7 @@ class GRProductTerm : GRContextual {
 }
 
 /// A Grammar Rule for handling ProductTermTail -> "*" Value ProductTermTail | epsilon
-class GRProductTermTail : GRContextual {
+class GRProductTermTail : ContextualRule {
     let times = GRLiteral(literal: "*")
     let num = GRValue()
     
@@ -217,7 +218,7 @@ class GRProductTermTail : GRContextual {
 }
 
 /// A Grammar Rule for handling ColumnLabel -> UpperAlphaString
-class GRColumnLabel : GRNonTerminal {
+class GRColumnLabel : NonTerminal {
     let label = GRUpperAlphaString()
     init() {
         super.init(rhsRule: [label])
@@ -225,7 +226,7 @@ class GRColumnLabel : GRNonTerminal {
 }
 
 /// A Grammar Rule for handling RowNumber -> PositiveInteger
-class GRRowNumber : GRNonTerminal {
+class GRRowNumber : NonTerminal {
     let label = GRPositiveInteger()
     init() {
         super.init(rhsRule: [label])
@@ -233,7 +234,7 @@ class GRRowNumber : GRNonTerminal {
 }
 
 /// A Grammar Rule for handling AbsoluteCell -> ColumnLabel RowNumber
-class GRAbsoluteCell : GRCell {
+class GRAbsoluteCell : CellRule {
     let col = GRColumnLabel()
     let row = GRRowNumber()
 
@@ -251,7 +252,7 @@ class GRAbsoluteCell : GRCell {
 }
 
 /// A Grammar Rule for handling RelativeCell -> r Integer c Integer
-class GRRelativeCell : GRCell {
+class GRRelativeCell : CellRule {
     let r = GRLiteral(literal: "r")
     let c = GRLiteral(literal: "c")
     let row = GRInteger()
@@ -264,19 +265,19 @@ class GRRelativeCell : GRCell {
     override func parse(input: String) -> String? {
         if let rest = super.parse(input: input) {
             if let context = self.context {
-                if let ref = CellReference(context: context, rowOffset: row.calculatedValue.get()!, colOffset: col.calculatedValue.get()!) {
+                if let ref = CellReference(context: context, rowOffset: (row.calculatedValue.get())!, colOffset: (col.calculatedValue.get()!)) {
                     cellReference = ref
                     return rest
                 }
             }
         }
-        self.nilify()
+        stringValue = nil
         return nil
     }
 }
 
 /// A Grammar Rule for handling CellReference -> AbsoluteCell | RelativeCell
-class GRCellReference : GRCell {
+class GRCellReference : CellRule {
     let absolute = GRAbsoluteCell()
     let relative = GRRelativeCell()
     
@@ -286,18 +287,19 @@ class GRCellReference : GRCell {
 
     override func parse(input: String) -> String? {
         if let rest = super.parse(input: input) {
-            if let cell = currentRuleSet?[0] as? GRCell {
+            if let cell = currentRuleSet?[0] as? CellRule {
                 cellReference = cell.cellReference
             }
             return rest
         }
+        stringValue = nil
         return nil
     }
 }
 
 
 /// A Grammar Rule for handling Value -> CellReference | Integer
-class GRValue : GRContextual {
+class GRValue : ContextualRule {
     let reference = GRCellReference()
     let number = GRInteger()
     
@@ -307,7 +309,7 @@ class GRValue : GRContextual {
     
     override func parse(input: String) -> String? {
         if let rest = super.parse(input: input) {
-            if let cell = currentRuleSet?[0] as? GRCell {
+            if let cell = currentRuleSet?[0] as? CellRule {
                 self.calculatedValue = Spreadsheet.theSpreadsheet.get(cell.cellReference!).value.copy()
             } else {
                 self.calculatedValue = number.calculatedValue.copy()
@@ -319,7 +321,7 @@ class GRValue : GRContextual {
 }
 
 /// A Grammar Rule for handling QuotedString -> " StringNoQuote "
-class GRQuotedString : GRNonTerminal {
+class GRQuotedString : NonTerminal {
     let quoteMark = GRLiteral(literal: "\"")
     let string = GRStringNoQuote()
     

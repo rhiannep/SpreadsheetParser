@@ -11,18 +11,8 @@ import XCTest
 @testable import SpreadsheetParser
 
 class ModelTests: XCTestCase {
-//    var cells : [CellReference: CellContents]
     
-    override func setUp() {
-        super.setUp()
-                // Put setup code here. This method is called before the invocation of each test method in the class.
-    }
-    
-    override func tearDown() {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-        super.tearDown()
-    }
-
+    // Relative cells compute the correct properties
     func testRelativeCell() {
         let cell1 = CellReference(colLabel: "AA", rowLabel: 3)
         let cell = CellReference(context: cell1, rowOffset: 20, colOffset: -1)
@@ -31,6 +21,8 @@ class ModelTests: XCTestCase {
         XCTAssertEqual(cell?.column, 25)
     }
     
+    // given a column label, the correct row and column number are computed
+    // A1 = 0,0
     func testColumnLetterToNumber() {
         let cell = CellReference(colLabel: "AA", rowLabel: 3)
         XCTAssertEqual(cell.absolute, "AA3")
@@ -38,6 +30,7 @@ class ModelTests: XCTestCase {
         XCTAssertEqual(cell.column, 26)
     }
     
+    // CellReferences can be used as hash keys
     func testHashability() {
         let cell1 = CellReference(colLabel: "AA", rowLabel: 3)
         let cell2 = CellReference(context: cell1, rowOffset: 0, colOffset: 0)
@@ -46,6 +39,7 @@ class ModelTests: XCTestCase {
         XCTAssertNotEqual(cell2, cell3)
     }
     
+    // Constructor and setters for cell content work
     func testCellContents() {
         let cellValue = CellValue()
         cellValue.set(number: 3)
@@ -56,6 +50,7 @@ class ModelTests: XCTestCase {
         XCTAssertEqual(cell.value.get(), 3)
     }
     
+    //test that cells can be inserted and deleted from a dictionary
     func testSimpleDictionary() {
         // A dictionary of CellContents indexed by CellReferences
         var cells = [CellReference: CellContents]()

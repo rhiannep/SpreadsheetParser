@@ -5,6 +5,8 @@
 //  Created by Rhianne Price on 12/08/17.
 //  Copyright © 2017 Rhianne Price. All rights reserved.
 //
+// A model to store the contents of a spreadsheet, including the appropriate data structures.
+//
 
 import Foundation
 
@@ -22,6 +24,8 @@ class Spreadsheet {
         cells[ref] = contents
     }
     
+    // A convenience method for retrieving refreshed data from the model given a string representing an absolute cell reference
+    // I have reused the parsing functionality from the grammar to convert from the string to a cell reference.
     func get(_ key : String) -> CellContents? {
         let reference = GRCellReference()
         if(reference.parse(input: key) == "") {
@@ -30,6 +34,8 @@ class Spreadsheet {
         return nil
     }
     
+    // Gets the refreshed data from the spreadsheet. To refresh the data the expression s reparsed and recalculated.
+    // Infinite recursion happens here in the case of circular references.
     func get(_ ref : CellReference) -> CellContents {
         let newExpression = GRExpression()
         newExpression.set(context: ref)

@@ -31,7 +31,6 @@ class Token : GrammarRule {
         // We require the regular expression to match right at the start of the whitespace-trimmed input string
         if(rangeOfFirstMatch.location != 0){
             // Make this grammar rule re-useable
-            self.nilify()
             return nil //no match
         }
         
